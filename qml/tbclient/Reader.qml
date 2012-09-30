@@ -1,10 +1,13 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import CustomWebKit 1.0
+import "Component"
 import "js/main.js" as Script
 
-Page {
+MyPage {
     id: root
+
+    title: myView ? myView.parent.thread.title : "阅读"
 
     property int currentIndex
     property ListView myView

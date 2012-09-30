@@ -141,7 +141,7 @@ MyPage {
                 onClicked: {
                     if (userId==Script.userId)
                         pageStack.push(Qt.resolvedUrl("FriendListPage.qml"),
-                                       { userId: userId, type: "follow" }).getlist()
+                                       { userId: userId, type: "follow" }).getlist(true)
                 }
             }
             ListItem {
@@ -155,7 +155,7 @@ MyPage {
                 onClicked: {
                     if (userId==Script.userId)
                         pageStack.push(Qt.resolvedUrl("FriendListPage.qml"),
-                                       { userId: userId, type: "fans" }).getlist()
+                                       { userId: userId, type: "fans" }).getlist(true)
                 }
             }
         }

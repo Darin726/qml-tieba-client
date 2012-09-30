@@ -23,7 +23,7 @@ function sendWebRequest(method, url, callback, postText, param){
                             callback(xhr.responseText.replace(/id\":(\d+)/g,'id":"$1"'), param)
                             signalCenter.loadFinished()
                         } catch (e){
-                            //console.log(JSON.stringify(e))
+                            console.log(JSON.stringify(e))
                             signalCenter.loadFailed("")
                         }
                     } else {

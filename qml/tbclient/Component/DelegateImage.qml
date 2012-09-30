@@ -10,6 +10,7 @@ Item {
         anchors.fill: parent
         onClicked: {
             signalCenter.linkActivated("img:"+modelData[1])
+            try { placeHolder.opacity = 0.5 } catch(e){}
         }
     }
     Image {
