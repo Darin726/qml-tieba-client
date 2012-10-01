@@ -9,7 +9,6 @@ MyPage {
     title: thread.title || ""
 
     property bool loading
-    onLoadingChanged: console.log(loading)
 
     property string threadId
     property bool isLz

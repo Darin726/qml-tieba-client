@@ -50,6 +50,11 @@ Item {
         onClicked: {
             if (Script.BDUSS != ""){
                 switch(infoType){
+                case "fans": {
+                    app.pageStack.push(Qt.resolvedUrl("FriendListPage.qml"),
+                                       { userId: Script.userId, type: "fans" }).getlist(true)
+                    break;
+                }
                 case "replyme": {
                     messagePage.replyToMePage.firstStart = false
                     messagePage.replyToMePage.getlist(true)
@@ -73,7 +78,7 @@ Item {
                 right: parent.right; rightMargin: platformStyle.paddingLarge
                 verticalCenter: parent.verticalCenter
             }
-            onClicked: parent.close()
+            onClicked: banner.close()
         }
     }
 }

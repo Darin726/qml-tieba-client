@@ -70,7 +70,7 @@ PageStackWindow {
         }
     }
     Image {
-        z: -1; anchors.fill: parent; fillMode: Image.PreserveAspectCrop
+        parent: pageStack; anchors.fill: parent; fillMode: Image.PreserveAspectCrop
         source: tbsettings.backgroundImage
         sourceSize.width: 640
     }

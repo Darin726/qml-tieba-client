@@ -378,7 +378,7 @@ function ding(caller, forum, threadId){
     signalCenter.dingStarted(caller)
     var obj = {
         BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
-        _phone_imei: tbsettings.imei, fid: forum.id, from: tbsettings.from, kw: forum.name, net_type: tbsettings.netType,
+        _phone_imei: tbsettings.imei, fid: forum.id, from: tbsettings.from, kw: encodeURIComponent(forum.name), net_type: tbsettings.netType,
         tbs: tbs, tid: threadId
     }
     sendWebRequest("POST", tbsettings.host+"/c/c/thread/comment", dingResult, stringify(obj), caller)
@@ -480,7 +480,7 @@ function signInResult(oritxt, param){
 function likeForum(caller, islike){
     var obj = {
         BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
-        _phone_imei: tbsettings.imei, fid: caller.forum.id, from: tbsettings.from, kw: caller.forum.name,
+        _phone_imei: tbsettings.imei, fid: caller.forum.id, from: tbsettings.from, kw: encodeURIComponent(caller.forum.name),
         net_type: tbsettings.netType, tbs: tbs
     }
     sendWebRequest("POST", tbsettings.host+"/c/c/forum/"+(islike?"like":"unlike"), likeForumResult, stringify(obj), caller)

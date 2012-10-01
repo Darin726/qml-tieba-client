@@ -86,7 +86,7 @@ MyPage {
                 platformInverted: tbsettings.whiteTheme
             }
             ListItemText {
-                text: "用户名或电子邮件地址"
+                text: phoneNumberCheck.checked ?"手机号":"用户名或电子邮件地址"
                 role: "SubTitle"
                 platformInverted: tbsettings.whiteTheme
             }
