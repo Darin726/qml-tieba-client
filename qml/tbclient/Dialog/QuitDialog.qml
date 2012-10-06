@@ -9,7 +9,6 @@ QueryDialog {
     acceptButtonText: "是啊"
     rejectButtonText: "不嘛"
     onAccepted: {
-        showMessage("正在清理缓存...")
         utility.clearNetworkCache()
         Qt.quit()
     }

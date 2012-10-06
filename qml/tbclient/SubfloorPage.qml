@@ -115,7 +115,7 @@ MyPage {
             event.accepted = true;
             break;
         case Qt.Key_R:
-            getlist();
+            getlist(true);
             event.accepted = true;
             break;
         }
@@ -130,7 +130,7 @@ MyPage {
     Label {
         anchors.centerIn: parent
         text: "正在加载数据..."
-        visible: post.floor == undefined
+        visible: post.floor == undefined && loading
         font.pixelSize: platformStyle.graphicSizeSmall
         color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
                                      : platformStyle.colorDisabledMid

@@ -76,7 +76,7 @@ Page {
         onPostArticleSuccessed: {
             if (caller == page.toString()){
                 loading = false
-                app.showMessage("发送成功·")
+                app.showMessage("发送成功")
                 forumPage.pageNumber = 1
                 forumPage.internal.getList()
                 pageStack.pop()

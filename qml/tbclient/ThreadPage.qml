@@ -294,8 +294,7 @@ Page {
         Transition {
             to: "replyAreaOpened"
             SequentialAnimation {
-                ScriptAction { script: replyLoader.source = "Component/ReplyArea.qml" }
-                ScriptAction { script: view.atYEndCache = view.atYEnd }
+                ScriptAction { script: { replyLoader.source = "Component/ReplyArea.qml"; view.atYEndCache = view.atYEnd } }
                 NumberAnimation { target: replyLoader; property: "height"; duration: 200 }
                 ScriptAction { script: if (view.atYEndCache) view.positionViewAtEnd() }
             }
@@ -303,10 +302,9 @@ Page {
         Transition {
             to: ""
             SequentialAnimation {
-                ScriptAction { script: view.atYEndCache = view.atYEnd }
+                ScriptAction { script: view.atYEndCache = view.atYEnd; }
                 NumberAnimation { target: replyLoader; property: "height"; duration: 200 }
-                ScriptAction { script: if (view.atYEndCache) view.positionViewAtEnd() }
-                ScriptAction { script: replyLoader.source = "" }
+                ScriptAction { script: { if (view.atYEndCache) view.positionViewAtEnd(); replyLoader.source = "" } }
             }
         }
     ]

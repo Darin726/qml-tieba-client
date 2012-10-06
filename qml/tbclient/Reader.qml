@@ -13,7 +13,6 @@ MyPage {
     property ListView myView
     onCurrentIndexChanged: flick.contentY = 0
 
-
     onStatusChanged:  {
         if (status == PageStatus.Active)
             root.forceActiveFocus()
@@ -32,7 +31,9 @@ MyPage {
         ToolButton {
             iconSource: "toolbar-back"
             onClicked: {
-                myView.positionViewAtIndex(currentIndex, ListView.Beginning)
+                try {
+                    myView.positionViewAtIndex(currentIndex, ListView.Beginning)
+                }catch(e){}
                 pageStack.pop()
             }
         }

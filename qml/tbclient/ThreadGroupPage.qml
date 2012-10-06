@@ -226,7 +226,7 @@ MyPage {
                     text: "复制网址"
                     flat: false
                     onClicked: {
-                        var o = Qt.createQmlObject('import QtQuick 1.1;TextInput{}', parent)
+                        var o = Qt.createQmlObject('import QtQuick 1.1;TextInput{visible:false}', parent)
                         o.text = "http://tieba.baidu.com/p/"+currentTab.threadId
                         o.selectAll (); o.copy(); o.destroy()
                         app.showMessage("已复制到剪贴板")
