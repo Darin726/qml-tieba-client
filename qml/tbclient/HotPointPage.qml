@@ -33,18 +33,18 @@ MyPage {
         Column {
             id: contentCol
             width: screen.width
-            ListView {
+            PathView {
                 id: headerView
-                orientation: ListView.Horizontal
-                snapMode: ListView.SnapOneItem
-                width: screen.width; height: 140
+                width: screen.width; height: screen.width/36*14
+                preferredHighlightBegin: 0.5
+                preferredHighlightEnd: 0.5
                 delegate: Item {
-                    width: 360; height: 140
+                    width: headerView.width; height: headerView.height
                     Image {
                         id: titleImg
                         anchors.fill: parent
-                        sourceSize: Qt.size(width, height)
                         source: modelData.pic
+                        smooth: true
                     }
                     Image {
                         anchors.centerIn: parent
@@ -65,6 +65,20 @@ MyPage {
                         anchors.fill: parent
                         onClicked: signalCenter.linkActivated("link:"+modelData.href)
                     }
+                }
+                path: Path {
+                    startX: -headerView.width*headerView.count/2 + headerView.width/2
+                    startY: headerView.height/2
+                    PathLine {
+                        x: headerView.width*headerView.count/2+headerView.width/2
+                        y: headerView.height/2
+                    }
+                }
+                Timer {
+                    running: headerView.visible && headerView.count > 0 && !headerView.moving;
+                    interval: 3000;
+                    repeat: true
+                    onTriggered: headerView.incrementCurrentIndex()
                 }
             }
             WebView {

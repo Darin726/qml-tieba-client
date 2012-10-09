@@ -348,6 +348,7 @@ function loadReplyToMeResult(oritxt, param, cached){
             param[1].clear()
         for (var i in obj.reply_list)
             param[1].append(obj.reply_list[i])
+        loadMessageObj(obj.message)
         signalCenter.getReplyListSuccessed(oritxt, obj.page, cached||false)
     }
 }
@@ -370,6 +371,7 @@ function loadAtMeList(oritxt, param, cached){
         if(param[0]) param[1].clear()
         for (var i in obj.at_list)
             param[1].append(obj.at_list[i])
+        loadMessageObj(obj.message)
         signalCenter.getAtListSuccessed(oritxt, obj.page, cached||false)
     }
 }
@@ -404,18 +406,22 @@ function loadMessage(oritxt){
     if (obj.error_code != 0)
         signalCenter.getMessageFailed(obj.error_msg)
     else {
-        var msg = "", type = ""
-        if (obj.message.fans > 0 && tbsettings.remindNewFans){
-            msg += "\n"+obj.message.fans+"个新粉丝"; type = "fans"
-        }
-        if (obj.message.replyme > 0 && tbsettings.remindReplyToMe){
-            msg += "\n"+obj.message.replyme+"个新回复"; type = "replyme"
-        }
-        if (obj.message.atme > 0 && tbsettings.remindAtMe){
-            msg += "\n"+obj.message.atme+"处提到我"; type = "atme"
-        }
-        signalCenter.getMessageSuccessed(msg.replace("\n", ""), type)
+        loadMessageObj(obj.message)
     }
+}
+
+function loadMessageObj(obj){
+    var msg = "", type = ""
+    if (obj.fans > 0 && tbsettings.remindNewFans){
+        msg += "\n"+obj.fans+"个新粉丝"; type = "fans"
+    }
+    if (obj.replyme > 0 && tbsettings.remindReplyToMe){
+        msg += "\n"+obj.replyme+"个新回复"; type = "replyme"
+    }
+    if (obj.atme > 0 && tbsettings.remindAtMe){
+        msg += "\n"+obj.atme+"处提到我"; type = "atme"
+    }
+    signalCenter.getMessageSuccessed(msg.replace("\n", ""), type)
 }
 
 function getProfile(caller){
