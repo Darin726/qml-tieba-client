@@ -77,7 +77,7 @@ MyPage {
                 loading = false
                 app.showMessage("回复成功")
                 replyField.text = ""
-                getlist(true)
+                app.multiThread(function(){getlist(true)})
             }
         }
         onVcodeSent: {
@@ -130,7 +130,7 @@ MyPage {
     Label {
         anchors.centerIn: parent
         text: "正在加载数据..."
-        visible: post.floor == undefined && loading
+        visible: loading && !viewHeader.visible
         font.pixelSize: platformStyle.graphicSizeSmall
         color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
                                      : platformStyle.colorDisabledMid

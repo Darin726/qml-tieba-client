@@ -42,13 +42,25 @@ Page {
                 if(Image.Ready == pic.status){
                     slider.value = Math.floor(root.calcscale() * 100);
                 }
-            }
-            BusyIndicator {
+            }            
+            Column {
                 anchors.centerIn: parent
-                running: pic.status == Image.Loading
-                visible: running
-                width: platformStyle.graphicSizeLarge
-                height: platformStyle.graphicSizeLarge
+                spacing: platformStyle.paddingLarge
+                visible: pic.status == Image.Loading
+                BusyIndicator {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    running: visible
+                    width: platformStyle.graphicSizeLarge
+                    height: platformStyle.graphicSizeLarge
+                    platformInverted: tbsettings.whiteTheme
+                }
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: Math.floor(pic.progress * 100) + "%"
+                    color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
+                                                 : platformStyle.colorDisabledMid
+                    font.pixelSize: platformStyle.fontSizeLarge
+                }
             }
         }
 

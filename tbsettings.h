@@ -28,6 +28,7 @@ class TBSettings : public QObject
     Q_PROPERTY(bool remindReplyToMe READ remindReplyToMe WRITE setRemindReplyToMe NOTIFY remindReplyToMeChanged)
     Q_PROPERTY(bool remindAtMe READ remindAtMe WRITE setRemindAtMe NOTIFY remindAtMeChanged)
     Q_PROPERTY(QString signText READ signText WRITE setSignText NOTIFY signTextChanged)
+//    Q_PROPERTY(int imageQuality READ imageQuality WRITE setImageQuality NOTIFY imageQualityChanged)
 
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
     Q_PROPERTY(QString host READ host)
@@ -88,6 +89,9 @@ public:
     QString signText() const;
     void setSignText(const QString &signText);
 
+//    int imageQuality() const;
+//    void setImageQuality(const int &imageQuality);
+
     QString host() const;
     QString clientVersion() const;
     QString from() const;
@@ -113,6 +117,7 @@ signals:
     void remindReplyToMeChanged();
     void remindAtMeChanged();
     void signTextChanged();
+//    void imageQualityChanged();
 
 public slots:
     void saveSettings();
@@ -138,6 +143,7 @@ private:
     bool m_remindReplyToMe;
     bool m_remindAtMe;
     QString m_signText;
+//    int m_imageQuality;
 
     QString m_appVersion;
     QString m_imagePath;

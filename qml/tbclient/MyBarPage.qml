@@ -100,7 +100,6 @@ MyPage {
             focus: true
             model: searchInput.text == "" ? myBarModel : suggestModel
             Component.onCompleted: forceActiveFocus()
-            section.property: "level_id"
             header: PullToActivate {
                 myView: view
                 onRefresh: Script.getMyBarList(myBarModel)

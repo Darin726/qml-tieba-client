@@ -45,11 +45,20 @@ Page {
             app.showMessage(errorString)
         }
         onGetReplyListSuccessed: {
+            loading = false
             pageNumber = page.current_page
             if (!cached)
                 utility.setCache("replyToMeList", result)
         }
         onCurrentUserChanged: firstStart = true
+    }
+    Label {
+        anchors.centerIn: parent
+        text: loading ? "正在加载数据..." : "无结果"
+        visible: replyLoader.status == Loader.Ready && replyLoader.item.count == 0
+        color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
+                                     : platformStyle.colorDisabledMid
+        font.pixelSize: platformStyle.graphicSizeSmall
     }
     ListModel { id: replyModel }
     Loader {

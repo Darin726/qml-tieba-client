@@ -53,6 +53,14 @@ Page {
         onCurrentUserChanged: firstStart = true
     }
     ListModel { id: atMeModel }
+    Label {
+        anchors.centerIn: parent
+        text: loading ? "正在加载数据..." : "无结果"
+        visible: atMeLoader.status == Loader.Ready && atMeLoader.item.count == 0
+        color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
+                                     : platformStyle.colorDisabledMid
+        font.pixelSize: platformStyle.graphicSizeSmall
+    }
     Loader {
         id: atMeLoader
         anchors.fill: parent

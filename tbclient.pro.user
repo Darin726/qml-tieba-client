@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by Qt Creator 2.4.1, 2012-10-09T19:34:31. -->
+<!-- Written by Qt Creator 2.4.1, 2012-10-13T13:20:50. -->
 <qtcreator>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -319,7 +319,7 @@
       <value type="bool" key="QtProjectManager.QMakeBuildStep.LinkQmlDebuggingLibrary">false</value>
       <value type="bool" key="QtProjectManager.QMakeBuildStep.LinkQmlDebuggingLibraryAuto">true</value>
       <value type="QString" key="QtProjectManager.QMakeBuildStep.QMakeArguments"></value>
-      <value type="bool" key="QtProjectManager.QMakeBuildStep.QMakeForced">false</value>
+      <value type="bool" key="QtProjectManager.QMakeBuildStep.QMakeForced">true</value>
      </valuemap>
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.1">
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Make</value>
@@ -390,7 +390,7 @@
     <value type="QString" key="Qt4ProjectManager.S60DeployConfiguration.DeviceAddress"></value>
     <value type="QString" key="Qt4ProjectManager.S60DeployConfiguration.DevicePort">65029</value>
     <value type="QChar" key="Qt4ProjectManager.S60DeployConfiguration.InstallationDriveLetter">C</value>
-    <value type="QString" key="Qt4ProjectManager.S60DeployConfiguration.SerialPortName"></value>
+    <value type="QString" key="Qt4ProjectManager.S60DeployConfiguration.SerialPortName">COM13</value>
     <value type="bool" key="Qt4ProjectManager.S60DeployConfiguration.SilentInstall">true</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.DeployConfigurationCount">1</value>

@@ -25,7 +25,10 @@ Item {
                              root.height = paintedHeight
                              placeHolder.destroy()
                          }
-        Component.onCompleted: if (tbsettings.showImage)
-                                   source = modelData[1]
+        Component.onCompleted: {
+            if (tbsettings.showImage){
+                source = modelData[1]
+            }
+        }
     }
 }

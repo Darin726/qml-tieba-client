@@ -112,8 +112,8 @@ MyPage {
             var id = page.cur_good_id
             for (var i in forum.good_classify){
                 var a = forum.good_classify[i]
-                if (i.class_id == id)
-                    return i.class_name
+                if (a.class_id == id)
+                    return a.class_name
             }
             return "精品区"
         }

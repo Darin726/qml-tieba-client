@@ -348,7 +348,8 @@ function loadReplyToMeResult(oritxt, param, cached){
             param[1].clear()
         for (var i in obj.reply_list)
             param[1].append(obj.reply_list[i])
-        loadMessageObj(obj.message)
+        if (!cached)
+            loadMessageObj(obj.message)
         signalCenter.getReplyListSuccessed(oritxt, obj.page, cached||false)
     }
 }
@@ -371,7 +372,8 @@ function loadAtMeList(oritxt, param, cached){
         if(param[0]) param[1].clear()
         for (var i in obj.at_list)
             param[1].append(obj.at_list[i])
-        loadMessageObj(obj.message)
+        if (!cached)
+            loadMessageObj(obj.message)
         signalCenter.getAtListSuccessed(oritxt, obj.page, cached||false)
     }
 }
@@ -551,7 +553,7 @@ function decodeThreadContentList(obj){
     for (var i in obj){
         var o = obj[i]
         if (o.type == 3){
-            res.push([false,o.src])
+            res.push([false, o.src, o.bsize])
             len ++
         } else {
             //[isText, Content, isRichText]

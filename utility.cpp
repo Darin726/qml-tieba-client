@@ -56,6 +56,21 @@ void Utility::launchPlayer(const QString &url)
     QDesktopServices::openUrl(QUrl("file:///"+videoFilePath));
 }
 
+QString Utility::scaleImage(const QString &fileName, const QSize &size)
+{
+    QFile file(fileName);
+    if (file.size() > 2*1024*1024){
+        QImage img(fileName);
+        if (!img.isNull()){
+            QImage res = img.scaled(size, Qt::KeepAspectRatio);
+            QString path = QDir::tempPath() + "/tmp.png";
+            if (res.save(path))
+                return path;
+        }
+    }
+    return "";
+}
+
 QString Utility::choosePhoto()
 {
 #ifdef Q_OS_SYMBIAN

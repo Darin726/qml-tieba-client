@@ -116,6 +116,7 @@ PageStackWindow {
                 Qt.createComponent("Dialog/AbortUploadDialog.qml").createObject(app).open()
                 return
             }
+            var img = utility.scaleImage(url, Qt.size(1280, 960))
             uploader.clear()
             uploader.currentCaller = caller
             uploader.open(tbsettings.host +"/c/c/img/upload")
@@ -125,7 +126,7 @@ PageStackWindow {
             uploader.addField("from", tbsettings.from)
             uploader.addField("net_type", tbsettings.netType)
             uploader.addField("pic_type", 0)
-            uploader.addFile("pic", url)
+            uploader.addFile("pic", img||url)
             uploader.send()
         }
         onLoadStarted: {
@@ -233,8 +234,11 @@ PageStackWindow {
         }
         ToolButton {
             iconSource: "toolbar-menu"
-            onClicked: pageStack.push(Qt.resolvedUrl("SettingPage.qml"))
+            onClicked: {
+                pageStack.push(Qt.resolvedUrl("SettingPage.qml"))
+            }
         }
+
     }
 
     function showMessage(msg){

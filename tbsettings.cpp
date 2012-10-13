@@ -46,10 +46,11 @@ void TBSettings::loadSettings()
         m_remindReplyToMe = m_settings->value("remindReplyToMe", true).toBool();
         m_remindAtMe = m_settings->value("remindAtMe", true).toBool();
         m_signText = m_settings->value("signText", "").toString();
+//        m_imageQuality = m_settings->value("imageQuality", 1).toInt();
 
         m_appVersion = qApp->applicationVersion().replace("\"","");
         m_host = "http://c.tieba.baidu.com";
-        m_clientVersion = "2.0.0";
+        m_clientVersion = "2.0.3";
         m_from = "tieba";
         m_netType = "1";
 
@@ -58,8 +59,6 @@ void TBSettings::loadSettings()
         m_imei = m_imei.replace("-","");
         QSystemInfo systemInfo;
         m_splitScreenInput = systemInfo.version(QSystemInfo::Firmware).split(".")[0].toInt() >= 113;
-        deviceInfo.deleteLater();
-        systemInfo.deleteLater();
     }
 }
 
@@ -83,6 +82,7 @@ void TBSettings::saveSettings()
         m_settings->setValue("remindReplyToMe", m_remindReplyToMe);
         m_settings->setValue("remindAtMe", m_remindAtMe);
         m_settings->setValue("signText", m_signText);
+//        m_settings->setValue("imageQuality", m_imageQuality);
     }
 }
 
@@ -289,6 +289,19 @@ void TBSettings::setSignText(const QString &signText)
         emit signTextChanged();
     }
 }
+/*
+int TBSettings::imageQuality() const
+{
+    return m_imageQuality;
+}
+void TBSettings::setImageQuality(const int &imageQuality)
+{
+    if (m_imageQuality != imageQuality){
+        m_imageQuality = imageQuality;
+        emit imageQualityChanged();
+    }
+}
+*/
 
 QString TBSettings::appVersion() const
 {

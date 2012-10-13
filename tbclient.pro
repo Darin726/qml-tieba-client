@@ -2,7 +2,7 @@ folder_01.source = qml/tbclient
 folder_01.target = qml
 DEPLOYMENTFOLDERS = folder_01
 
-VERSION = 0.7.2
+VERSION = 0.7.3
 VERSTR = '\\"$${VERSION}\\"'
 DEFINES += VER=\"$${VERSTR}\"
 
@@ -13,7 +13,7 @@ QT += network webkit
 symbian {
     TARGET = tbclient
     TARGET.UID3 = 0x2006622A
-    TARGET.CAPABILITY += NetworkServices SwEvent LocalServices ReadDeviceData WriteDeviceData
+    TARGET.CAPABILITY += NetworkServices SwEvent LocalServices ReadDeviceData
 
     TARGET.EPOCHEAPSIZE = 0x20000 0x4000000 #64MB
 
