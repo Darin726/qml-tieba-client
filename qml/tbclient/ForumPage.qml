@@ -46,6 +46,15 @@ MyPage {
             onClicked: forumMenu.open()
         }
     }
+    Keys.onPressed: {
+        switch (event.key){
+        case Qt.Key_Backspace:
+            pageStack.pop();
+            event.accepted = true;
+            break;
+        }
+    }
+
     Connections {
         target: signalCenter
         onLoadForumStarted:  {
@@ -196,6 +205,7 @@ MyPage {
         id: viewHeader
         headerText: forumPage.isGood ? internal.getClassNameByClassId() : (forum.name||forumName)+"吧"
         MouseArea {
+            id: viewHeaderMA
             anchors.fill: parent
             enabled: forum.name != undefined
             onClicked: {
@@ -208,6 +218,17 @@ MyPage {
                 }
             }
         }
+        Image {
+            anchors {
+                right: parent.right; rightMargin: platformStyle.paddingSmall; verticalCenter: parent.verticalCenter
+            }
+            source: privateStyle.imagePath("qtg_graf_choice_list_indicator", tbsettings.whiteTheme)
+        }
+        Rectangle {
+            anchors.fill: parent
+            color: "#80000000"
+            visible: viewHeaderMA.pressed
+        }
     }
     ListView {
         id: view
@@ -215,9 +236,9 @@ MyPage {
             fill: parent; topMargin: viewHeader.height
         }
         clip: true
-        focus: true
         cacheBuffer: height
         model: forumModel
+        onVisibleChanged: forceActiveFocus()
         header: PullToActivate {
             myView: view
             pullDownMessage: page.has_prev == 1 ? "下拉返回上一页" : "下拉可以刷新"

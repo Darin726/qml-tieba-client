@@ -35,6 +35,7 @@ MyPage {
             width: screen.width
             PathView {
                 id: headerView
+                clip: true
                 width: screen.width; height: screen.width/36*14
                 preferredHighlightBegin: 0.5
                 preferredHighlightEnd: 0.5

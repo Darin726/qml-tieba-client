@@ -82,6 +82,7 @@ MyPage {
             }
             onCleared: loader.focus = true
             KeyNavigation.down: loader
+            Keys.onReturnPressed: goButton.clicked()
         }
     }
     ListModel { id: myBarModel }

@@ -9,7 +9,6 @@ ScribbleArea::ScribbleArea(QDeclarativeItem *parent) :
     m_modified = false;
 
     setFlag(QGraphicsItem::ItemHasNoContents, false);
-    //setAcceptTouchEvents(true);
     setAcceptedMouseButtons(Qt::LeftButton);
 }
 
@@ -51,48 +50,7 @@ void ScribbleArea::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QW
 {
     painter->drawImage(boundingRect(), m_image, boundingRect());
 }
-/*
-bool ScribbleArea::event(QEvent *event)
-{
 
-    switch (event->type()){
-    case QEvent::TouchBegin:
-    case QEvent::TouchUpdate:
-    case QEvent::TouchEnd:
-    {
-        if (this->isEnabled()) {
-            QList<QTouchEvent::TouchPoint> touchPoints = static_cast<QTouchEvent *>(event)->touchPoints();
-            foreach (const QTouchEvent::TouchPoint &touchPoint, touchPoints) {
-                switch (touchPoint.state()) {
-                case Qt::TouchPointStationary:
-                    // don't do anything if this touch point hasn't moved
-                    continue;
-                default:
-                    {
-                        QPointF c = touchPoint.pos();
-                        qreal r = m_penWidth * touchPoint.pressure();
-                        QPainter p(&m_image);
-                        p.setPen(Qt::NoPen);
-                        p.setBrush(m_color);
-                        p.drawEllipse(c, r, r);
-                        p.end();
-
-                        setModified(true);
-                        update(QRectF(c.x()-r, c.y()-r, 2*r, 2*r).adjusted(-2,-2,2,2));
-                    }
-                    break;
-                }
-            }
-        }
-        break;
-    }
-    default:
-        return QDeclarativeItem::event(event);
-    }
-    return true;
-
-}
-*/
 void ScribbleArea::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     if (newGeometry.width() > m_image.width() || newGeometry.height() > m_image.height())
@@ -115,9 +73,19 @@ void ScribbleArea::resizeImage(QImage *image, const QSize &newSize)
 
 void ScribbleArea::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (this->isEnabled())
+    if (this->isEnabled()&&event->buttons()&&Qt::LeftButton)
+    {
         lastPoint = event->pos();
+        QPainter p(&m_image);
+        p.setPen(QPen(QBrush(m_color),m_penWidth, Qt::SolidLine, Qt::RoundCap));
+        p.drawPoint(lastPoint);
+        update(lastPoint.x() - m_penWidth,
+               lastPoint.y() - m_penWidth,
+               m_penWidth * 2,
+               m_penWidth * 2);
+    }
 }
+
 void ScribbleArea::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (this->isEnabled()&&event->buttons()&&Qt::LeftButton)
@@ -140,6 +108,9 @@ void ScribbleArea::drawLine()
     QPainter p(&m_image);
     p.setPen(QPen(QBrush(m_color),m_penWidth, Qt::SolidLine, Qt::RoundCap));
     p.drawLine(lastPoint, endPoint);
+    update(qMin(lastPoint.x(), endPoint.x()) - m_penWidth,
+           qMin(lastPoint.y(), endPoint.y()) - m_penWidth,
+           qAbs(lastPoint.x() - endPoint.x()) + m_penWidth*2,
+           qAbs(lastPoint.y() - endPoint.y()) + m_penWidth*2);
     lastPoint = endPoint;
-    update();
 }

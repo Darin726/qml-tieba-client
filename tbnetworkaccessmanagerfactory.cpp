@@ -17,9 +17,6 @@
 */
 
 #include "tbnetworkaccessmanagerfactory.h"
-
-#include <QNetworkReply>
-#include <QNetworkDiskCache>
 #include <QDesktopServices>
 
 TBNetworkManager::TBNetworkManager(QObject *parent) :
@@ -31,8 +28,7 @@ QNetworkReply *TBNetworkManager::createRequest(Operation op,
                                                    const QNetworkRequest &request,
                                                    QIODevice *outgoingData)
 {
-    QNetworkRequest new_req(request);
-    QNetworkReply *reply = QNetworkAccessManager::createRequest(op, new_req, outgoingData);
+    QNetworkReply *reply = QNetworkAccessManager::createRequest(op, request, outgoingData);
     return reply;
 }
 

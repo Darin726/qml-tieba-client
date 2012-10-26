@@ -18,8 +18,9 @@ Item {
         sourceSize: Qt.size(platformStyle.graphicSizeMedium, platformStyle.graphicSizeMedium)
         source: "qrc:/gfx/photos.svg"
     }
+
     Image {
-        sourceSize.width: 250
+        sourceSize.width: 300
         onStatusChanged: if (status == Image.Ready) {
                              root.width = paintedWidth
                              root.height = paintedHeight

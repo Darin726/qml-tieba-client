@@ -5,9 +5,7 @@
 #include <QQueue>
 #include <QUrl>
 #include <QFile>
-#include <QtNetwork/QNetworkReply>
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork>
 
 class DownloadManager : public QObject
 {

@@ -69,11 +69,7 @@ PageStackWindow {
             }
         }
     }
-    Image {
-        parent: pageStack; anchors.fill: parent; fillMode: Image.PreserveAspectCrop
-        source: tbsettings.backgroundImage
-        sourceSize.width: 640
-    }
+
     PinchArea {
         z: -1;
         anchors.fill: parent
@@ -89,6 +85,13 @@ PageStackWindow {
     SignalCenter { id: signalCenter }
     InfoBanner { id: infoBanner; platformInverted: tbsettings.whiteTheme }
     AutoCheck { id: autoCheck }
+    Image {
+        parent: pageStack; width: screen.width; height: screen.height
+        sourceSize.width: 640; fillMode: Image.PreserveAspectCrop
+        source: tbsettings.backgroundImage
+        smooth: true
+        opacity: 0.5
+    }
 
     HttpUploader {
         id: uploader
@@ -116,7 +119,6 @@ PageStackWindow {
                 Qt.createComponent("Dialog/AbortUploadDialog.qml").createObject(app).open()
                 return
             }
-            var img = utility.scaleImage(url, Qt.size(1280, 960))
             uploader.clear()
             uploader.currentCaller = caller
             uploader.open(tbsettings.host +"/c/c/img/upload")
@@ -126,7 +128,7 @@ PageStackWindow {
             uploader.addField("from", tbsettings.from)
             uploader.addField("net_type", tbsettings.netType)
             uploader.addField("pic_type", 0)
-            uploader.addFile("pic", img||url)
+            uploader.addFile("pic", url)
             uploader.send()
         }
         onLoadStarted: {
@@ -249,7 +251,7 @@ PageStackWindow {
     }
     function multiThread(func){
         var timer = Qt.createQmlObject('import QtQuick 1.0; Timer{interval:10}',app)
-        timer.triggered.connect(function(){func(); timer.destroy()})
+        timer.triggered.connect(function(){try{func()}catch(e){}; timer.destroy()})
         timer.start()
     }
 
@@ -270,6 +272,7 @@ PageStackWindow {
     function enterSubfloor(threadId, postId, subpostId, isLz){
         pageStack.push(Qt.resolvedUrl("SubfloorPage.qml"),
                        { threadId: threadId, subpostId: subpostId||"", postId: postId, isLz: isLz||false })
+        .getlist(true)
     }
     function enterProfilePage(userId){
         if (userId == Script.userId){

@@ -7,10 +7,10 @@
 
 DownloadManager::DownloadManager(QObject *parent) :
     QObject(parent),
-    m_progress(0.0),
-    m_state(Unsent),
+    m_progress(0),
     m_error(0)
 {
+    m_state = Unsent;
 }
 
 DownloadManager::State DownloadManager::state() const

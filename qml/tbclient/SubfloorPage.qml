@@ -21,9 +21,6 @@ MyPage {
     property string subpostId
     property string postId
 
-    onSubpostIdChanged: getlist(true)
-    onPostIdChanged: if(subpostId=="")getlist(true)
-
     property int pageNumber: 1
     onPageNumberChanged: {
         if(pageNumber>page.total_page) pageNumber = page.total_page
@@ -248,7 +245,7 @@ MyPage {
                     ListItemText {
                         platformInverted: parent.parent.platformInverted
                         text: author.name_show
-                        role: "Subtitle"
+                        role: "SubTitle"
                     }
                     Label {
                         width: parent.parent.paddingItem.width

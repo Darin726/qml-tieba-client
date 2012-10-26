@@ -30,7 +30,7 @@ CommonDialog {
             }
             Image {
                 anchors.centerIn: parent
-                source: "qrc:/pics/"+(
+                source: "qrc:/emo/pics/"+(
                             index<1?"image_emoticon":
                             index<50?"image_emoticon"+(index+1):
                             index<70?"e_ali_0"+Emotion.ali_file[index-50]:

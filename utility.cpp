@@ -21,9 +21,7 @@ Utility::Utility(QObject *parent) :
 
 Utility::~Utility()
 {
-    //clearNetworkCache();
 }
-
 
 void Utility::startApp(const QString &program)
 {
@@ -54,21 +52,6 @@ void Utility::launchPlayer(const QString &url)
         file.close();
     }
     QDesktopServices::openUrl(QUrl("file:///"+videoFilePath));
-}
-
-QString Utility::scaleImage(const QString &fileName, const QSize &size)
-{
-    QFile file(fileName);
-    if (file.size() > 2*1024*1024){
-        QImage img(fileName);
-        if (!img.isNull()){
-            QImage res = img.scaled(size, Qt::KeepAspectRatio);
-            QString path = QDir::tempPath() + "/tmp.png";
-            if (res.save(path))
-                return path;
-        }
-    }
-    return "";
 }
 
 QString Utility::choosePhoto()
@@ -228,19 +211,13 @@ bool Utility::clearCache(){
 bool Utility::deleteDir(const QString &dirName)
 {
     QDir directory(dirName);
-
     if (!directory.exists())
     {
         return true;
     }
-
     QStringList files = directory.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
-
-
     QList<QString>::iterator f = files.begin();
-
     bool error = false;
-
     for (; f != files.end(); ++f)
     {
         QString filePath = QDir::convertSeparators(directory.path() + '/' + (*f));
@@ -262,12 +239,5 @@ bool Utility::deleteDir(const QString &dirName)
             }
         }
     }
-/*
-    if(!directory.rmdir(QDir::convertSeparators(directory.path())))
-    {
-        qDebug() << "Global::deleteDir 3" << directory.path()  << "faild";
-        error = true;
-    }
-*/
     return !error;
 }

@@ -9,6 +9,6 @@ Page {
         target: app
         property: "title"
         value: root.title
-        when: root.status == PageStatus.Active
+        when: root.status == PageStatus.Active && title != ""
     }
 }

@@ -20,7 +20,7 @@
 #define TBNETWORKACCESSMANAGERFACTORY_H
 
 #include <QDeclarativeNetworkAccessManagerFactory>
-#include <QNetworkAccessManager>
+#include <QtNetwork>
 
 class TBNetworkAccessManagerFactory : public QDeclarativeNetworkAccessManagerFactory
 {

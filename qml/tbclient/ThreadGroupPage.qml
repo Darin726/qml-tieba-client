@@ -32,6 +32,15 @@ MyPage {
             currentTab.threadView.forceActiveFocus()
     }
 
+    Keys.onPressed: {
+        switch (event.key){
+        case Qt.Key_Backspace:
+            pageStack.pop();
+            event.accepted = true;
+            break;
+        }
+    }
+
     Connections {
         target: signalCenter
         onSwipeRight: {
@@ -159,8 +168,8 @@ MyPage {
             onClicked: currentTab.postReply()
         }
         ToolButton {
-            iconSource: "toolbar-menu"
-            onClicked: replyMenu.open()
+            iconSource: "qrc:/gfx/tb_close_stop%1.svg".arg(platformInverted?"_inverted":"")
+            onClicked: currentTab.state = ""
         }
     }
     ToolBarLayout {
@@ -232,15 +241,6 @@ MyPage {
                         app.showMessage("已复制到剪贴板")
                     }
                 }
-            }
-        }
-    }
-    Menu {
-        id: replyMenu
-        content: MenuLayout {
-            MenuItem {
-                text: "关闭输入框"
-                onClicked: currentTab.state = ""
             }
         }
     }

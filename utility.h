@@ -36,7 +36,6 @@ public slots:
     void setCache(const QString &type, const QString &cache);
     QString getCache(const QString &type);
     bool clearCache();
-    QString scaleImage(const QString &fileName, const QSize &size);
 
 private:
     QDeclarativeEngine *m_engine;

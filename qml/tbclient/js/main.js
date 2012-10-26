@@ -308,7 +308,7 @@ function getSubFloorList(caller, threadId, postId, subpostId, pageNumber, subpos
 function loadSubfloorList(oritxt, param){
     var obj = JSON.parse(oritxt)
     if (obj.error_code != 0){
-        signalCenter.getSubfloorListFailed(param[0].toString())
+        signalCenter.getSubfloorListFailed(param[0].toString(), obj.error_msg)
     } else {
         param[0].forum = obj.forum
         param[0].thread = obj.thread
@@ -571,8 +571,9 @@ function decodeThreadContentList(obj){
                 res[len][1] += "<a href=\"link:%1\">%2</a>".arg(o.link).arg(o.text);
                 break
             case 2:
-                var _txt = o.text.toLowerCase().replace(/i_f/,"write_face_")
-                res[len][1] += "<img src=\"qrc:/pics/" + _txt + (/(b|t|w)_/.test(_txt)?".gif\"/>":".png\"/>")
+                var _txt = o.text.replace(/i_f/,"write_face_")
+                var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
+                res[len][1] += ("<img src=\"qrc:/emo/pics/" + _txt + sfx).toLowerCase()
                 break;
             case 4:
                 res[len][1] += "<a href=\"at:%1\">%2</a>".arg(o.uid).arg(o.text);
@@ -594,9 +595,10 @@ function decodeThreadContent(obj){
         case 0: res += (obj[i].text || "").replace(/</g,"&lt;").replace(/\n/g,"<br/>"); break;
         case 1: res += "<a href=\"link:%1\">%2</a>".arg(obj[i].link).arg(obj[i].text); break
         case 2:
-            var _txt = obj[i].text.toLowerCase().replace(/i_f/,"write_face_")
-            res += "<img src=\"qrc:/pics/" + _txt + (/(b|t|w)_/.test(_txt)?".gif\"/>":".png\"/>")
-            break
+            var _txt = obj[i].text.replace(/i_f/,"write_face_")
+            var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
+            res += ("<img src=\"qrc:/emo/pics/" + _txt + sfx).toLowerCase()
+            break;
         case 3:
             if (tbsettings.showImage)
                 res += "<a href=\"img:%1\" ><img src=\"%1\"/></a><br/>".arg(obj[i].src)

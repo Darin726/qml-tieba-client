@@ -40,7 +40,6 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
 
     QPixmap p(":/gfx/splash.png");
     QSplashScreen *splash = new QSplashScreen(p);
-    splash->setAttribute(Qt::WA_LockPortraitOrientation);
     splash->show();
     splash->raise();
     app->processEvents();
