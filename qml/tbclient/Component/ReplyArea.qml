@@ -73,11 +73,14 @@ Item {
             if (caller == root.toString()){
                 threadPage.loading = false
                 app.showMessage("回复成功")
-                if (threadPage.isReverse && !threadPage.hasPrev) threadPage.loadPrev()
-                else if (!threadPage.isReverse && !threadPage.hasMore) threadPage.loadMore()
-                threadPage.state = ""
+                app.multiThread(function(){
+                                    if (threadPage.isReverse && !threadPage.hasPrev) threadPage.loadPrev()
+                                    else if (!threadPage.isReverse && !threadPage.hasMore) threadPage.loadMore()
+                                    threadPage.state = ""
+                                })
             }
         }
+        onLoadFailed: threadPage.loading = false;
     }
     Loader {
         sourceComponent: root.imageurl == "" ? undefined : imagePreviewComp
@@ -124,7 +127,8 @@ Item {
             platformInverted: tbsettings.whiteTheme
             iconSource: "qrc:/gfx/write_image_%1.png".arg(pressed?"s":"n")
             onClicked: {
-                var diag = Qt.createComponent("../Dialog/ImageSelectorDialog.qml").createObject(root)
+                var diag = Qt.createComponent("../Dialog/ImageSelectorDialog.qml")
+                .createObject(root, { caller: root })
                 diag.open()
             }
         }

@@ -19,7 +19,7 @@ PageStackWindow {
         visible: showStatusBar
         BusyIndicator {
             visible: app.loading
-            running: app.loading
+            running: true
             height: privateStyle.statusBarHeight
             width: height
         }
@@ -28,7 +28,8 @@ PageStackWindow {
             clip: true
             interactive: false
             height: privateStyle.statusBarHeight
-            width: 0.4*parent.parent.width
+            width: parent.parent.width - 200
+
             contentWidth: Math.max(titleText.width,width)
             contentHeight: platformStyle.fontSizeSmall
             contentItem.anchors.verticalCenter: verticalCenter
@@ -44,14 +45,12 @@ PageStackWindow {
                         titleAnimation.start()
                 }
             }
-
             SequentialAnimation {
                 id: titleAnimation
-                loops: Animation.Infinite
                 running: Qt.application.active
-                ScriptAction { script: titleFlicy.contentX = 0 }
+                ScriptAction { script: titleFlicy.contentX = 0; }
                 NumberAnimation { duration: 1000 }
-                NumberAnimation {
+                PropertyAnimation {
                     target: titleFlicy;
                     property: "contentX";
                     to: titleFlicy.contentWidth - titleFlicy.width;
@@ -66,6 +65,7 @@ PageStackWindow {
                     }
                 }
                 NumberAnimation { duration: 1000 }
+                PropertyAnimation { target: titleFlicy; property: "contentX"; to: 0}
             }
         }
     }
@@ -85,12 +85,15 @@ PageStackWindow {
     SignalCenter { id: signalCenter }
     InfoBanner { id: infoBanner; platformInverted: tbsettings.whiteTheme }
     AutoCheck { id: autoCheck }
+
     Image {
         parent: pageStack; width: screen.width; height: screen.height
         sourceSize.width: 640; fillMode: Image.PreserveAspectCrop
         source: tbsettings.backgroundImage
+        visible: source != ""
         smooth: true
-        opacity: 0.5
+        asynchronous: true
+        opacity: tbsettings.whiteTheme ? 0.7 : 0.5
     }
 
     HttpUploader {

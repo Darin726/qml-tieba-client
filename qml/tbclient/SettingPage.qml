@@ -251,12 +251,25 @@ MyPage {
             }
             Button {
                 width: parent.width; platformInverted: tbsettings.whiteTheme
-                text: tbsettings.signText || "未设定"
+                text: tbsettings.signText.replace(/(^\s*)|(\s*$)/g,"").replace(/\s/g," ") || "未设定"
                 onClicked: {
                     Qt.createComponent("Dialog/SetSignDialog.qml").createObject(settingPage).open()
                 }
             }
-            Item { width: 1; height: platformStyle.paddingLarge }
+            ListItem {
+                width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
+                platformInverted: tbsettings.whiteTheme
+                subItemIndicator: true
+                Label {
+                    anchors {
+                        left: parent.left; leftMargin: platformStyle.paddingMedium;
+                        top: parent.paddingItem.top;
+                    }
+                    text: "自定义表情"
+                    platformInverted: tbsettings.whiteTheme
+                }
+                onClicked: pageStack.push(Qt.resolvedUrl("CustomEmoPage.qml"))
+            }
         }
     }
 }

@@ -21,9 +21,10 @@ Item {
     Label {
         id: headerTxt
         anchors {
-            left: paddingItem.left; verticalCenter: parent.verticalCenter
+            left: paddingItem.left; verticalCenter: parent.verticalCenter; right: paddingItem.right
         }
         platformInverted: parent.platformInverted
         font.pixelSize: platformStyle.fontSizeLarge
+        elide: Text.ElideRight
     }
 }

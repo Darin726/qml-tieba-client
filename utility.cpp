@@ -6,6 +6,7 @@
 #include <QNetworkDiskCache>
 #include <QNetworkAccessManager>
 #include <QImage>
+#include <QCoreApplication>
 
 #ifdef Q_OS_SYMBIAN
 #include <apgtask.h>
@@ -240,4 +241,40 @@ bool Utility::deleteDir(const QString &dirName)
         }
     }
     return !error;
+}
+
+bool Utility::removeFile(const QString &url)
+{
+    return QFile::remove(url);
+}
+
+QString Utility::resizeImage(const QString &url, const QSize &toSize)
+{
+    QImage image(url);
+    if (!image.isNull()){
+        QString path = qApp->applicationDirPath() + "/.thumbnail";
+
+        bool ok = true;
+        QDir dir(path);
+        if (!dir.exists()) ok = dir.mkpath(path);
+
+        QString basename = QFileInfo(url).baseName() + QString("_%1_%2").arg(QString::number(toSize.width()), QString::number(toSize.height()));
+        if (QFile::exists(path + "/" + basename + ".png")){
+            int i = 1;
+            while (QFile::exists(path + "/" + basename + QString::number(i) + ".png"))
+                i ++;
+            basename += QString::number(i);
+        }
+        QString res = path + "/" + basename + ".png";
+
+        QImage resImg = image.scaled(toSize);
+        if (!resImg.isNull())
+            ok = ok && resImg.save(res, "PNG");
+
+        if (ok)
+            return res;
+        else
+            return "";
+    }
+    return "";
 }

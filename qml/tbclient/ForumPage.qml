@@ -105,6 +105,7 @@ MyPage {
                 pageStack.pop()
             }
         }
+        onLoadFailed: loading = false;
     }
     Label {
         anchors.centerIn: parent
@@ -223,6 +224,7 @@ MyPage {
                 right: parent.right; rightMargin: platformStyle.paddingSmall; verticalCenter: parent.verticalCenter
             }
             source: privateStyle.imagePath("qtg_graf_choice_list_indicator", tbsettings.whiteTheme)
+            visible: viewHeaderMA.enabled;
         }
         Rectangle {
             anchors.fill: parent
@@ -263,8 +265,10 @@ MyPage {
             onClicked: app.enterThread(model.id, model.title)
             Column {
                 id: contentCol
-                x: platformStyle.paddingLarge; y: platformStyle.paddingLarge
-                width: parent.paddingItem.width
+                anchors {
+                    left: listItem.paddingItem.left; right: listItem.paddingItem.right;
+                    top: listItem.paddingItem.top
+                }
                 spacing: platformStyle.paddingSmall
                 ListItemText {
                     text: model.author.name_show
@@ -286,18 +290,23 @@ MyPage {
                 }
             }
             Row {
-                anchors.right: parent.paddingItem.right
-                y: platformStyle.paddingLarge
+                anchors {
+                    right: listItem.paddingItem.right; top: listItem.paddingItem.top
+                }
                 Image {
+                    visible: source != ""
                     source: model.is_top == 1 ? "qrc:/gfx/frs_post_top.png":""
                 }
                 Image {
+                    visible: source != ""
                     source: model.is_good == 1 ? "qrc:/gfx/frs_post_good.png":""
                 }
                 Image {
+                    visible: source != ""
                     source: model.comment_num > 0 ? "qrc:/gfx/frs_post_ding.png":""
                 }
                 Label {
+                    visible: text != ""
                     text: model.comment_num || ""
                     color: listItem.platformInverted ? "blue" : "yellow"
                 }

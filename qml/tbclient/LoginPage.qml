@@ -53,6 +53,9 @@ MyPage {
                     Script.login(caller, phoneNumberCheck.checked, u, p, vcode, vcodeMd5)
             }
         }
+        onLoadFailed: {
+            loginBtn.enabled = true; loginBtn.text = "登录"
+        }
     }
     Flickable {
         id: flicky
@@ -104,8 +107,7 @@ MyPage {
                     placeholderText: "点击输入"
                     width: contentCol.width
                     platformInverted: tbsettings.whiteTheme
-                    inputMethodHints: Qt.ImhDigitsOnly
-                    validator: RegExpValidator { regExp: /\d+/ }
+                    inputMethodHints: Qt.ImhDialableCharactersOnly | Qt.ImhNoPredictiveText
                 }
                 transform: Rotation {
                     id: flipRot
@@ -136,6 +138,7 @@ MyPage {
                 placeholderText: "点击输入"
                 platformInverted: tbsettings.whiteTheme
                 echoMode: TextInput.Password
+                inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             }
             Label {
                 text: "<a href=\"link\">忘记密码？</a>"

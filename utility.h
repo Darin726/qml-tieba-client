@@ -28,10 +28,13 @@ public slots:
     void openFileDefault(const QString &url);
     void launchPlayer(const QString &url);
     void startApp(const QString &program);
+    bool removeFile(const QString &url);
+    QString resizeImage(const QString &url, const QSize &toSize);
 
     QString decodeGBKHex(const QByteArray &hexdata);
     QString choosePhoto();
     QString savePixmap(QString url, QString path = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation));
+
     void clearNetworkCache();
     void setCache(const QString &type, const QString &cache);
     QString getCache(const QString &type);

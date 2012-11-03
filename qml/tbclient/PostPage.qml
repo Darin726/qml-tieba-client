@@ -78,10 +78,11 @@ Page {
                 loading = false
                 app.showMessage("发送成功")
                 forumPage.pageNumber = 1
-                forumPage.internal.getList()
+                app.multiThread(function(){forumPage.internal.getList()})
                 pageStack.pop()
             }
         }
+        onLoadFailed: loading = false;
     }
 
     tools: ToolBarLayout {
@@ -110,7 +111,8 @@ Page {
                 platformInverted: parent.platformInverted
                 iconSource: "qrc:/gfx/write_image_%1.png".arg(pressed?"s":"n")
                 onClicked: {
-                    var diag = Qt.createComponent("Dialog/ImageSelectorDialog.qml").createObject(page)
+                    var diag = Qt.createComponent("Dialog/ImageSelectorDialog.qml")
+                    .createObject(page, { caller: page })
                     diag.open()
                 }
             }

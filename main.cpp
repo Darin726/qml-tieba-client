@@ -44,6 +44,7 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     splash->raise();
     app->processEvents();
 
+    app->setOrganizationName(QString("Yeatse"));
     app->setApplicationName(QString("tbclient"));
     app->setApplicationVersion(VER);
 
@@ -61,8 +62,8 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
 
     viewer.setAttribute(Qt::WA_OpaquePaintEvent);
     viewer.setAttribute(Qt::WA_NoSystemBackground);
-    viewer.viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
     viewer.viewport()->setAttribute(Qt::WA_NoSystemBackground);
+    viewer.viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
     TBSettings settings;
     Utility utility;

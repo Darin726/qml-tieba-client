@@ -12,6 +12,7 @@ Page {
     property variant thread: ({})
     property alias listModel: threadModel
     property alias threadView: view
+//    property variant imageList: []
 
     property bool hasFloor
     property bool isLz: false
@@ -69,6 +70,7 @@ Page {
             if (caller == threadPage.toString())
                 app.showMessage("成功")
         }
+        onLoadFailed: loading = false;
     }
 
     ListModel { id: threadModel }
@@ -95,14 +97,15 @@ Page {
                 itemMenu.open()
             }
             ListItemText {
-                x: parent.width - width
+                anchors.right: parent.right
                 text: modelData.floor+"#"
                 role: "SubTitle"
                 platformInverted: parent.platformInverted
             }
             Row {
-                x: platformStyle.paddingLarge
-                y: parent.height - height - platformStyle.paddingLarge
+                anchors {
+                    left: listItem.paddingItem.left; bottom: listItem.paddingItem.bottom
+                }
                 Component.onCompleted: if (modelData.floor == 1 || !threadPage.hasFloor)
                                            visible = false
                 Image {
@@ -140,7 +143,9 @@ Page {
                 Repeater {
                     model: modelData.contentData
                     Loader {
-                        x: platformStyle.paddingLarge
+                        anchors {
+                            left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
+                        }
                         Component.onCompleted: {
                             if (modelData[0])
                                 sourceComponent = delegateLabel
@@ -150,7 +155,6 @@ Page {
                         Component {
                             id: delegateLabel
                             Label {
-                                width: contentCol.width - platformStyle.paddingLarge*2
                                 wrapMode: Text.Wrap
                                 platformInverted: listItem.platformInverted
                                 font.pixelSize: tbsettings.fontSize
@@ -169,7 +173,9 @@ Page {
                     }
                 }
                 ListItemText {
-                    x: parent.width - width - platformStyle.paddingSmall
+                    anchors {
+                        right: parent.right; rightMargin: platformStyle.paddingSmall
+                    }
                     platformInverted: listItem.platformInverted
                     text: Qt.formatDateTime(new Date(modelData.time*1000),"yyyy-MM-dd hh:mm:ss")
                     role: "SubTitle"

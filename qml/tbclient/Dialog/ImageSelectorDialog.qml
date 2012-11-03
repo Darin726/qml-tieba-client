@@ -4,15 +4,23 @@ import com.nokia.symbian 1.1
 ContextMenu {
     id: root
 
+    property Item caller
+
     MenuLayout {
         MenuItem {
+            text: "拍摄"
+            visible: false
+            onClicked: app.pageStack.push(Qt.resolvedUrl("../Component/CameraPage.qml"),
+                                          { caller: root.caller })
+        }
+        MenuItem {
             text: "从照片库"
-            onClicked: signalCenter.imageSelected(root.parent.toString(), utility.choosePhoto())
+            onClicked: signalCenter.imageSelected(caller.toString(), utility.choosePhoto())
         }
         MenuItem {
             text: "涂鸦"
             onClicked: app.pageStack.push(Qt.resolvedUrl("../Component/ScribblePage.qml"),
-                                          { caller: root.parent })
+                                          { caller: root.caller })
         }
     }
     property bool opened

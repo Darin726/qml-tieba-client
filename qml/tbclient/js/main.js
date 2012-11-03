@@ -1,5 +1,7 @@
 .pragma library
 
+Qt.include("storage.js")
+
 var signalCenter;
 var tbsettings;
 
@@ -164,26 +166,26 @@ function getThreadList(page, postId, isBack, isLast, isMark, from, isRenew){
         net_type: tbsettings.netType, pid: postId||0, r: page.isReverse?1:0, rn: isMark&&!from?1:60,
         st_type: from||"tb_frslist"
     }
-    var param = {
-        page: page, isBack: isBack, isRenew: isRenew
-    }
+    var param = [page, isBack, isRenew]
     sendWebRequest("POST", tbsettings.host+"/c/f/pb/page", loadThreadList, stringify(obj), param)
 }
 function loadThreadList(oritxt, param){
     var obj = JSON.parse(oritxt)
     if (obj.error_code!=0){
-        signalCenter.loadThreadFailed(param.page.toString(), obj.error_msg)
+        signalCenter.loadThreadFailed(param[0].toString(), obj.error_msg)
     } else {
         tbs = obj.anti.tbs
-        var p = param.page
+        var p = param[0]
         p.hasFloor = obj.has_floor == 1
         p.forum = obj.forum
         p.thread = obj.thread
+//        var imageList = [];
 
-        if (param.isBack){
-            if (param.isRenew){
-                p.hasMore = obj.page.has_more == 1
-                p.listModel.clear()
+        if (param[1]){
+            if (param[2]){
+                p.hasMore = obj.page.has_more == 1;
+                p.listModel.clear();
+//                p.imageList = [];
             } else
                 p.hasMore = p.hasMore && obj.page.has_more == 1
             p.hasPrev = obj.page.has_prev == 1
@@ -191,11 +193,14 @@ function loadThreadList(oritxt, param){
                 var t = obj.post_list[i]
                 t.contentData = decodeThreadContentList(t.content)
                 p.listModel.insert(i, {"data":t})
+//                imageList = imageList.concat(r[1])
             }
+//            p.imageList = imageList.concat(p.imageList)
         } else {
-            if (param.isRenew){
+            if (param[2]){
                 p.hasPrev = obj.page.has_prev == 1
                 p.listModel.clear()
+//                p.imageList = [];
             } else
                 p.hasPrev = p.hasPrev && obj.page.has_prev == 1
             p.hasMore = obj.page.has_more == 1
@@ -204,7 +209,9 @@ function loadThreadList(oritxt, param){
                 var t = obj.post_list[i]
                 t.contentData = decodeThreadContentList(t.content)
                 p.listModel.append({"data":t})
+//                imageList = imageList.concat(r[1])
             }
+//            p.imageList = p.imageList.concat(imageList);
         }
         signalCenter.loadThreadSuccessed(p.toString())
     }
@@ -212,6 +219,7 @@ function loadThreadList(oritxt, param){
 
 function postReply(callerItem, content, forum, threadId, floorNum, quoteId, vcode, vcodeMd5){
     signalCenter.postReplyStarted(callerItem.toString())
+    content = adjustCustomEmotion(content)
     if (tbsettings.signText != "") content += "\n"+tbsettings.signText
     var obj = {
         BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
@@ -520,6 +528,7 @@ function getRecommendPicResult(oritxt){
 
 function postArticle(caller, title, content, forum, vcode, vcodeMd5){
     signalCenter.postArticleStarted(caller.toString())
+    content = adjustCustomEmotion(content)
     if (tbsettings.signText != "") content += "\n"+tbsettings.signText
     var obj = {
         BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
@@ -549,11 +558,13 @@ function postArticleResult(oritxt, param){
 
 function decodeThreadContentList(obj){
     var res = []
+//    var img = []
     var len = -1
     for (var i in obj){
         var o = obj[i]
         if (o.type == 3){
             res.push([false, o.src, o.bsize])
+//            img.push(o.src)
             len ++
         } else {
             //[isText, Content, isRichText]
@@ -573,7 +584,7 @@ function decodeThreadContentList(obj){
             case 2:
                 var _txt = o.text.replace(/i_f/,"write_face_")
                 var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
-                res[len][1] += ("<img src=\"qrc:/emo/pics/" + _txt + sfx).toLowerCase()
+                res[len][1] += ("<img src=\"emo/" + _txt + sfx).toLowerCase()
                 break;
             case 4:
                 res[len][1] += "<a href=\"at:%1\">%2</a>".arg(o.uid).arg(o.text);
@@ -584,6 +595,7 @@ function decodeThreadContentList(obj){
             }
         }
     }
+//    return [res, img]
     return res
 }
 
@@ -597,7 +609,7 @@ function decodeThreadContent(obj){
         case 2:
             var _txt = obj[i].text.replace(/i_f/,"write_face_")
             var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
-            res += ("<img src=\"qrc:/emo/pics/" + _txt + sfx).toLowerCase()
+            res += ("<img src=\"emo/" + _txt + sfx).toLowerCase()
             break;
         case 3:
             if (tbsettings.showImage)
@@ -621,8 +633,19 @@ function formatDateTime(milisec){
 }
 
 function randomString(){
-    var t = new Date().getTime()
-    var t2 = t + 1
-    var res = Qt.md5(t)+Qt.md5(t2)
+    var res = Qt.md5(Math.random())+Qt.md5(Math.random())
     return res.slice(0, 45)
+}
+
+function adjustCustomEmotion(content){
+    var el = getCustomEmo()
+    function change(emo){
+        var name = emo.substring(2)
+        for (var i in el){
+            if (el[i].name == name)
+                return "#("+el[i].imageinfo
+        }
+        return emo
+    }
+    return content.replace(/#\([^)]*/g, change)
 }

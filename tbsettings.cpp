@@ -50,7 +50,7 @@ void TBSettings::loadSettings()
 
         m_appVersion = qApp->applicationVersion().replace("\"","");
         m_host = "http://c.tieba.baidu.com";
-        m_clientVersion = "2.0.3";
+        m_clientVersion = "2.1.0";
         m_from = "tieba";
         m_netType = "1";
 

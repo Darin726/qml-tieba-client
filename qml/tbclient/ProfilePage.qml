@@ -100,8 +100,9 @@ MyPage {
                 }
             }
             Item {
-                x: platformStyle.paddingLarge
-                width: parent.width - platformStyle.paddingLarge*2
+                anchors {
+                    left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
+                }
                 height: intro.height + platformStyle.paddingLarge
                 Label {
                     id: intro

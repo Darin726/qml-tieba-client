@@ -95,8 +95,9 @@ Page {
                     }
                     Image {
                         id: avatarImage
-                        x: platformStyle.paddingLarge
-                        y: platformStyle.paddingLarge
+                        anchors {
+                            left: parent.left; top: parent.top; margins: platformStyle.paddingLarge
+                        }
                         sourceSize.height: platformStyle.graphicSizeMedium
                         Component.onCompleted: if (tbsettings.showAvatar)
                                                    source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait

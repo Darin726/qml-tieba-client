@@ -10,6 +10,7 @@ function initialize() {
         function(tx) {
             tx.executeSql('CREATE TABLE IF NOT EXISTS userInfo(userId TEXT UNIQUE, userName TEXT, BDUSS TEXT, password TEXT)');
             tx.executeSql('CREATE TABLE IF NOT EXISTS bookmark(threadId TEXT UNIQUE, postId TEXT, author TEXT, title TEXT, isLz BOOLEAN)');
+            tx.executeSql('CREATE TABLE IF NOT EXISTS customEmo(name TEXT UNIQUE, thumbnail TEXT, imageinfo TEXT)');
           });
 }
 
@@ -27,7 +28,7 @@ function getUserInfo(userId){
     var db = getDatabase()
     var res = []
     db.readTransaction(function(tx){
-                           if (userId){
+                           if (userId != undefined){
                                var rs = tx.executeSql('SELECT * FROM userInfo WHERE userId=?;',[userId]);
                                if (rs.rows.length > 0){
                                    var t = rs.rows.item(0)
@@ -86,5 +87,38 @@ function deleteBookMark(threadId){
                            tx.executeSql('DELETE FROM bookmark WHERE threadId =?;',[threadId])
                        else
                            tx.executeSql('DELETE FROM bookmark')
+                   })
+}
+
+function getCustomEmo(){
+    var db = getDatabase()
+    var res = []
+    db.readTransaction(function(tx){
+                           var rs = tx.executeSql('SELECT * FROM customEmo')
+                           for (var i =0, l = rs.rows.length; i < l; i++){
+                               var t = rs.rows.item(i)
+                               res.push({ name: t.name, thumbnail: t.thumbnail, imageinfo: t.imageinfo })
+                           }
+                       })
+    return res;
+}
+
+function addCustomEmo(name, thumbnail, imageinfo){
+    var db = getDatabase();
+    var res = false;
+    db.transaction(function(tx) {
+                       var rs = tx.executeSql('INSERT OR REPLACE INTO customEmo VALUES (?,?,?);', [name, thumbnail, imageinfo]);
+                       res = rs.rowsAffected > 0
+                   })
+    return res;
+}
+
+function deleteCustomEmo(name){
+    var db = getDatabase();
+    db.transaction(function(tx) {
+                       if (name)
+                           tx.executeSql('DELETE FROM customEmo WHERE name =?;',[name])
+                       else
+                           tx.executeSql('DELETE FROM customEmo')
                    })
 }

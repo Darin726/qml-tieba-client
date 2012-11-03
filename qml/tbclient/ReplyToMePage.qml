@@ -106,8 +106,9 @@ Page {
                     }
                     Column {
                         id: contCol
-                        x: platformStyle.paddingLarge; y: platformStyle.paddingLarge
-                        width: parent.paddingItem.width
+                        anchors {
+                            left: listItem.paddingItem.left; top: listItem.paddingItem.top; right: listItem.paddingItem.right
+                        }
                         spacing: platformStyle.paddingMedium
                         Row {
                             spacing: platformStyle.paddingMedium
@@ -142,9 +143,10 @@ Page {
                             }
                             Label {
                                 id: contStr
-                                x: platformStyle.paddingLarge
-                                y: platformStyle.paddingLarge
-                                width: parent.width - platformStyle.paddingLarge*2
+                                anchors {
+                                    left: parent.left; right: parent.right; top: parent.top
+                                    margins: platformStyle.paddingLarge
+                                }
                                 text: content
                                 font.weight: Font.Light
                                 wrapMode: Text.Wrap

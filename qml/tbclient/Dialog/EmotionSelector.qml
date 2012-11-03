@@ -1,11 +1,51 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "../js/EmotionData.js" as Emotion
+import "../js/storage.js" as Database
 
 CommonDialog {
     id: root
 
     titleText: "选择表情(最多可添加10个)"
+    property variant customEmo: []
+    property bool inSubfloor: false
+    Component.onCompleted: {
+        if (!inSubfloor){
+            customEmo = Database.getCustomEmo()
+        }
+    }
+
+    function getEmoSrc(index){
+        var res = "";
+        if (index < 1){
+            return "../emo/image_emoticon.png"
+        } else if (index < 50){
+            return "../emo/image_emoticon"+(index+1)+".png"
+        } else if (index < 70){
+            return "../emo/e_ali_0"+Emotion.ali_file[index-50] + ".png"
+        } else if (index < 90){
+            return "../emo/e_yz_"+paddingLeft(Emotion.yz_file[index-70], 3)+".png"
+        } else if (index < 110){
+            return "../emo/e_b"+paddingLeft(index-89,2)+".png"
+        } else {
+            return customEmo[index-110].thumbnail
+        }
+    }
+
+    function itemClicked(index){
+        var n = ""
+        if (index<50)
+            n = Emotion.emotion_name[index]
+        else if (index<70)
+            n = Emotion.ali_name[index-50]
+        else if (index<90)
+            n = Emotion.yz_name[index-70]
+        else if (index<110)
+            n = Emotion.b_name[index-90]
+        else
+            n = customEmo[index-110].name
+        signalCenter.emotionSelected(root.parent.toString(), "#("+n+")")
+    }
 
     content: GridView {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -13,30 +53,13 @@ CommonDialog {
         height: 3*68
         cellHeight: 68
         cellWidth: 68
-        model: 110
+        model: 110+customEmo.length
         delegate: MouseArea {
             width: 68; height: 68
-            onClicked: {
-                var n = ""
-                if (index<50)
-                    n = Emotion.emotion_name[index]
-                else if (index<70)
-                    n = Emotion.ali_name[index-50]
-                else if (index<90)
-                    n = Emotion.yz_name[index-70]
-                else
-                    n = Emotion.b_name[index-90]
-                signalCenter.emotionSelected(root.parent.toString(), "#("+n+")")
-            }
+            onClicked: root.itemClicked(index)
             Image {
                 anchors.centerIn: parent
-                source: "qrc:/emo/pics/"+(
-                            index<1?"image_emoticon":
-                            index<50?"image_emoticon"+(index+1):
-                            index<70?"e_ali_0"+Emotion.ali_file[index-50]:
-                            index<90?"e_yz_"+paddingLeft(Emotion.yz_file[index-70],3):
-                                      "e_b"+paddingLeft(index-89,2)
-                            )+".png"
+                Component.onCompleted: source = root.getEmoSrc(index)
             }
             Rectangle {
                 anchors.fill: parent

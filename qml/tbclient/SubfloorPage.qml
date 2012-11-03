@@ -95,6 +95,7 @@ MyPage {
             if (status == PageStatus.Active)
                 pageStack.pop()
         }
+        onLoadFailed: loading = false;
     }
     onStatusChanged: {
         if (status == PageStatus.Active)
@@ -204,15 +205,18 @@ MyPage {
                         }
                     }
                     Label {
-                        x: platformStyle.paddingLarge
-                        width: parent.width - platformStyle.paddingLarge*2
+                        anchors {
+                            left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
+                        }
                         text: post.contentString
                         font.pixelSize: tbsettings.fontSize
                         platformInverted: tbsettings.whiteTheme
                         wrapMode: Text.Wrap
                     }
                     Row {
-                        x: platformStyle.paddingLarge
+                        anchors {
+                            left: parent.left; leftMargin: platformStyle.paddingLarge
+                        }
                         Image {
                             source: "qrc:/gfx/pb_reply.png"
                         }
@@ -239,16 +243,18 @@ MyPage {
                 }
                 Column {
                     id: delegateCol
-                    x: platformStyle.paddingLarge
-                    y: platformStyle.paddingLarge
+                    anchors {
+                        left: listItem.paddingItem.left; top: listItem.paddingItem.top;
+                        right: listItem.paddingItem.right
+                    }
                     spacing: platformStyle.paddingMedium
                     ListItemText {
-                        platformInverted: parent.parent.platformInverted
+                        platformInverted: listItem.platformInverted
                         text: author.name_show
                         role: "SubTitle"
                     }
                     Label {
-                        width: parent.parent.paddingItem.width
+                        width: parent.width
                         text: contentString
                         font.pixelSize: tbsettings.fontSize
                         platformInverted: listItem.platformInverted
@@ -275,7 +281,7 @@ MyPage {
             platformInverted: tbsettings.whiteTheme
             iconSource: "qrc:/gfx/write_face_%1.png".arg(pressed?"s":"n")
             onClicked: {
-                var emo = Qt.createComponent("Dialog/EmotionSelector.qml").createObject(subFloorPage)
+                var emo = Qt.createComponent("Dialog/EmotionSelector.qml").createObject(subFloorPage, {inSubfloor: true})
                 emo.open()
             }
         }
