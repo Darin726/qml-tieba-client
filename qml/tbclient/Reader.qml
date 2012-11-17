@@ -89,11 +89,12 @@ MyPage {
                 width: parent.width
                 preferredWidth: width
                 preferredHeight: flick.height - header.height
-                html: myView ? "<style type=\"text/css\">body{background-color:#EBDCBD}"
-                               +"img{ max-width: 300px; }</style><body>"
-                               +Script.decodeThreadContent(myView.model.get(currentIndex).data.content)
-                               +"</body>"
-                             : ""
+                html: myView
+                      ? "<style type=\"text/css\">body{background-color:#EBDCBD}img{max-width: 300px}</style>"
+                        +"<body>"
+                        +Script.decodeThreadContent(myView.model.get(currentIndex).data.content)
+                        +"</body>"
+                      : ""
                 settings {
                     defaultFontSize: tbsettings.fontSize
                     defaultFixedFontSize: tbsettings.fontSize

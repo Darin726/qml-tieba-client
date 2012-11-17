@@ -5,8 +5,9 @@ Qt.include("storage.js")
 var signalCenter;
 var tbsettings;
 
-var userId = "", userName = "", BDUSS = ""
-var tbs = ""
+var userId = "", userName = "", BDUSS = "";
+var tbs = "";
+var clientId = "wappc_"+Date.now()+"_"+Math.floor(Math.random()*1000)
 
 function sendWebRequest(method, url, callback, postText, param){
     var xhr = new XMLHttpRequest()
@@ -136,7 +137,7 @@ function getArticleList(caller, forumModel, goodModel, pageNumber, classid, isGo
         BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
         _phone_imei: tbsettings.imei, cid: isGood?classid:0, ctime: new Date().getTime(), from: tbsettings.from,
         is_good: isGood ? 1: 0, kw: encodeURIComponent(keyword), net_type: tbsettings.netType,
-        pn: pageNumber, st_type: "tb_forumlist"
+        pn: pageNumber, rn: 35, st_type: "tb_forumlist"
     }
     sendWebRequest("POST", tbsettings.host+"/c/f/frs/page", loadArticleList, stringify(obj), [forumModel, goodModel, caller])
 }
@@ -151,24 +152,46 @@ function loadArticleList(oritxt, param){
         for (var i in obj.forum.good_classify)
             param[1].append(obj.forum.good_classify[i])
         param[0].clear()
-        for (var i in obj.thread_list)
-            param[0].append(obj.thread_list[i])
+        for (var i in obj.thread_list){
+            var t = obj.thread_list[i];
+            var pic = [];
+            for (var j=0;j<t.media.length && pic.length < 3;j++){
+                if (t.media[j].type == 3){
+                    pic.push(t.media[j].big_pic)
+                }
+            }
+            t.pic = pic;
+            param[0].append({"data": t})
+        }
         signalCenter.loadForumSuccessed(param[2], obj.forum, obj.page, obj.anti.forbid_info)
     }
 }
 
-function getThreadList(page, postId, isBack, isLast, isMark, from, isRenew){
+function getThreadList(page, threadId, option){
     signalCenter.loadThreadStarted(page.toString())
     var obj = {
-        BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
-        _phone_imei: tbsettings.imei, back: isBack?1:0, ctime: new Date().getTime(),
-        from: tbsettings.from, kz: page.threadId, last: isLast?1:0, lz: page.isLz?1:0, mark: isMark?1:0,
-        net_type: tbsettings.netType, pid: postId||0, r: page.isReverse?1:0, rn: isMark&&!from?1:60,
-        st_type: from||"tb_frslist"
+        BDUSS: BDUSS,
+        _client_id: clientId,
+        _client_type: tbsettings.clientType,
+        _client_version: tbsettings.clientVersion,
+        _phone_imei: tbsettings.imei,
+        back: option.back||0,
+        ctime: Date.now().toString().slice(-4),
+        from: tbsettings.from,
+        kz: threadId,
+        last: option.last||0,
+        lz: option.lz||0,
+        mark: option.mark||0,
+        net_type: tbsettings.netType,
+        pid: option.pid||0,
+        pn: option.pn||0,
+        r: option.r||0,
+        rn: option.rn||60,
+        st_type: "tb_frslist"
     }
-    var param = [page, isBack, isRenew]
-    sendWebRequest("POST", tbsettings.host+"/c/f/pb/page", loadThreadList, stringify(obj), param)
+    sendWebRequest("POST", tbsettings.host+"/c/f/pb/page", loadThreadList, stringify(obj), [page, option])
 }
+
 function loadThreadList(oritxt, param){
     var obj = JSON.parse(oritxt)
     if (obj.error_code!=0){
@@ -179,39 +202,39 @@ function loadThreadList(oritxt, param){
         p.hasFloor = obj.has_floor == 1
         p.forum = obj.forum
         p.thread = obj.thread
-//        var imageList = [];
+        p.currentPage = obj.page.current_page
+        p.totalPage = obj.page.total_page
+        p.manageGroup = obj.user.is_manager || (obj.user.id == obj.thread.author.id ? 3 : 0)
 
-        if (param[1]){
-            if (param[2]){
-                p.hasMore = obj.page.has_more == 1;
+        var opt = param[1]
+        if (opt.back){
+            if (opt.renew){
+                p.downPage = obj.page.current_page
+                p.hasDownwards = obj.page.has_more == 1;
                 p.listModel.clear();
-//                p.imageList = [];
-            } else
-                p.hasMore = p.hasMore && obj.page.has_more == 1
-            p.hasPrev = obj.page.has_prev == 1
+            }
+            p.hasUpwards = obj.page.has_prev == 1
+            p.topPage = obj.page.current_page
             for (var i in obj.post_list){
                 var t = obj.post_list[i]
                 t.contentData = decodeThreadContentList(t.content)
                 p.listModel.insert(i, {"data":t})
-//                imageList = imageList.concat(r[1])
             }
-//            p.imageList = imageList.concat(p.imageList)
+            p.threadView.positionViewAtIndex(obj.post_list.length, 3)
         } else {
-            if (param[2]){
-                p.hasPrev = obj.page.has_prev == 1
+            if (opt.renew){
+                p.topPage = obj.page.current_page
+                p.hasUpwards = obj.page.has_prev == 1
                 p.listModel.clear()
-//                p.imageList = [];
-            } else
-                p.hasPrev = p.hasPrev && obj.page.has_prev == 1
-            p.hasMore = obj.page.has_more == 1
+            }
+            p.hasDownwards = obj.page.has_more == 1
+            p.downPage = obj.page.current_page
 
             for (var i in obj.post_list){
                 var t = obj.post_list[i]
                 t.contentData = decodeThreadContentList(t.content)
                 p.listModel.append({"data":t})
-//                imageList = imageList.concat(r[1])
             }
-//            p.imageList = p.imageList.concat(imageList);
         }
         signalCenter.loadThreadSuccessed(p.toString())
     }
@@ -297,20 +320,24 @@ function loadFollowSuggest(oritxt, param){
     }
 }
 
-function getSubFloorList(caller, threadId, postId, subpostId, pageNumber, subpostModel, isRenew){
-    signalCenter.getSubfloorListStarted(caller.toString())
+function getSubfloorList(page, threadId, option){
+    console.log(JSON.stringify(option))
+    signalCenter.getSubfloorListStarted(page.toString())
     var obj = {
-        BDUSS: BDUSS, _client_type: tbsettings.clientType, _client_version: tbsettings.clientVersion,
-        _phone_imei: tbsettings.imei, from: tbsettings.from, kz: threadId, net_type: tbsettings.netType
+        BDUSS: BDUSS,
+        _client_id: clientId,
+        _client_type: tbsettings.clientType,
+        _client_version: tbsettings.clientVersion,
+        _phone_imei: tbsettings.imei,
+        from: tbsettings.from,
+        kz: threadId,
+        net_type: tbsettings.netType,
+        pid: option.pid||0,
+        pn: option.pn||0,
+        spid: option.spid||0,
+        tbs: tbs
     }
-    if (postId || false){
-        obj.pid = postId
-        obj.pn = pageNumber
-    } else {
-        obj.spid = subpostId
-    }
-    if (isRenew) subpostModel.clear()
-    sendWebRequest("POST", tbsettings.host+"/c/f/pb/floor", loadSubfloorList, stringify(obj), [caller, subpostModel, isRenew])
+    sendWebRequest("POST", tbsettings.host+"/c/f/pb/floor", loadSubfloorList, stringify(obj), [page, option])
 }
 
 function loadSubfloorList(oritxt, param){
@@ -318,22 +345,25 @@ function loadSubfloorList(oritxt, param){
     if (obj.error_code != 0){
         signalCenter.getSubfloorListFailed(param[0].toString(), obj.error_msg)
     } else {
-        param[0].forum = obj.forum
-        param[0].thread = obj.thread
+        var p = param[0]
+        p.forum = obj.forum; p.thread = obj.thread;
         obj.post.contentString = decodeThreadContent(obj.post.content)
-        param[0].post = obj.post
+        p.post = obj.post
         tbs = obj.anti.tbs
-        param[0].page = obj.page
-        param[0].postId = obj.post.id
-        param[0].pageNumber = obj.page.current_page || 1
+        p.page = obj.page
+        p.postId = obj.post.id
+        p.pageNumber = obj.page.current_page||1
 
+        var m = p.view.model;
+        if (param[1].renew){
+            m.clear(); p.view.positionViewAtBeginning();
+        }
         for (var i in obj.subpost_list){
             var t = obj.subpost_list[i]
             t.contentString = decodeThreadContent(t.content)
-            param[1].append(t)
+            m.append({"data": t})
         }
-
-        signalCenter.getSubfloorListSuccessed(param[0].toString(), param[2])
+        signalCenter.getSubfloorListSuccessed(p.toString())
     }
 }
 
@@ -454,7 +484,7 @@ function loadProfile(oritxt, caller){
     }
 }
 
-function concern(caller, isConcern){
+function followFriend(caller, isConcern){
     signalCenter.concernStarted(caller.toString())
     var obj = {
         BDUSS: BDUSS, _client_type: tbsettings.clientTpe, _client_version: tbsettings.clientVersion,
@@ -462,9 +492,9 @@ function concern(caller, isConcern){
         tbs: tbs
     }
     var url = isConcern ? "/c/c/user/follow" : "/c/c/user/unfollow"
-    sendWebRequest("POST", tbsettings.host+url, concernResult, stringify(obj), [caller, isConcern])
+    sendWebRequest("POST", tbsettings.host+url, followResult, stringify(obj), [caller, isConcern])
 }
-function concernResult(oritxt, param){
+function followResult(oritxt, param){
     var obj = JSON.parse(oritxt)
     if (obj.error_code != 0)
         signalCenter.concernFailed(param[0].toString(), obj.error_msg)
@@ -554,17 +584,78 @@ function postArticleResult(oritxt, param){
     }
 }
 
+function threadManage(caller, option, postId, isVipDel, isFloor, source){
+    var obj = {
+        BDUSS: BDUSS,
+        _client_id: clientId,
+        _client_type: tbsettings.clientType,
+        _client_version: tbsettings.clientVersion,
+        _phone_imei: tbsettings.imei,
+        fid: caller.forum.id,
+        from: tbsettings.from,
+        is_vipdel: isVipDel?1:0,
+        isfloor: isFloor?1:0,
+        net_type: tbsettings.netType,
+        pid: postId,
+        src: source,
+        tbs: tbs,
+        word: encodeURIComponent(caller.forum.name),
+        z: caller.thread.id
+    }
+    sendWebRequest("POST",
+                   tbsettings.host+"/c/c/bawu/"+option,
+                   threadManageResult,
+                   stringify(obj),
+                   [caller, option, postId])
+}
+
+function threadManageResult(oritxt, param){
+    var obj = JSON.parse(oritxt)
+    if (obj.error_code != 0){
+        signalCenter.manageFailed(param[0].toString(), obj.error_msg)
+    } else {
+        signalCenter.manageSuccessed(param[0].toString(), param[1], param[2])
+    }
+}
+
+function commitprison(caller, username, day){
+    var obj = {
+        BDUSS: BDUSS,
+        _client_id: clientId,
+        _client_type: tbsettings.clientType,
+        _client_version: tbsettings.clientVersion,
+        _phone_imei: tbsettings.imei,
+        day: day,
+        fid: caller.forum.id,
+        from: tbsettings.from,
+        net_type: tbsettings.netType,
+        ntn: "banid",
+        tbs: tbs,
+        un: encodeURIComponent(username),
+        word: encodeURIComponent(caller.forum.name),
+        z: caller.thread.id
+    }
+    sendWebRequest("POST", tbsettings.host+"/c/c/bawu/commitprison", commitprisonResult, stringify(obj), [caller])
+}
+
+function commitprisonResult(oritxt, param){
+    var obj = JSON.parse(oritxt)
+    if (obj.error_code != 0){
+        signalCenter.manageFailed(param[0].toString(), obj.error_msg)
+    } else {
+        signalCenter.manageSuccessed(param[0].toString(), "commitprison", "")
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 function decodeThreadContentList(obj){
     var res = []
-//    var img = []
     var len = -1
     for (var i in obj){
         var o = obj[i]
         if (o.type == 3){
             res.push([false, o.src, o.bsize])
-//            img.push(o.src)
             len ++
         } else {
             //[isText, Content, isRichText]
@@ -582,9 +673,9 @@ function decodeThreadContentList(obj){
                 res[len][1] += "<a href=\"link:%1\">%2</a>".arg(o.link).arg(o.text);
                 break
             case 2:
-                var _txt = o.text.replace(/i_f/,"write_face_")
-                var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
-                res[len][1] += ("<img src=\"emo/" + _txt + sfx).toLowerCase()
+                var txt = o.text.replace(/i_f/,"write_face_")
+                var sfx = /(B|t|w)_/.test(txt)?".gif\"/>":".png\"/>"
+                res[len][1] += "<img src=\"qrc:/emo/pics/" + txt.toLowerCase() + sfx
                 break;
             case 4:
                 res[len][1] += "<a href=\"at:%1\">%2</a>".arg(o.uid).arg(o.text);
@@ -595,7 +686,6 @@ function decodeThreadContentList(obj){
             }
         }
     }
-//    return [res, img]
     return res
 }
 
@@ -607,9 +697,9 @@ function decodeThreadContent(obj){
         case 0: res += (obj[i].text || "").replace(/</g,"&lt;").replace(/\n/g,"<br/>"); break;
         case 1: res += "<a href=\"link:%1\">%2</a>".arg(obj[i].link).arg(obj[i].text); break
         case 2:
-            var _txt = obj[i].text.replace(/i_f/,"write_face_")
-            var sfx = /(B|t|w)_/.test(_txt)?".gif\"/>":".png\"/>"
-            res += ("<img src=\"emo/" + _txt + sfx).toLowerCase()
+            var txt = obj[i].text.replace(/i_f/,"write_face_")
+            var sfx = /(B|t|w)_/.test(txt)?".gif\"/>":".png\"/>"
+            res += "<img src=\"qrc:/emo/pics/" + txt.toLowerCase() + sfx
             break;
         case 3:
             if (tbsettings.showImage)

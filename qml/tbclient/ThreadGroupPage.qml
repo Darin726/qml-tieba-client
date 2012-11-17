@@ -53,7 +53,8 @@ MyPage {
 
     QtObject {
         id: internal
-        function addThreadPage(threadId, threadName, postId, isMark, from, isLz){
+
+        function addThreadPage(threadId, threadName, option){
             var _i = findTabIndexByThreadId(threadId)
             if (_i!=-1){
                 currentTab = threadTab.layout.children[_i].tab
@@ -62,8 +63,8 @@ MyPage {
             restrictThreadNum()
 
             var page = Qt.createComponent("ThreadPage.qml").createObject(threadGroup)
-            page.threadId = threadId; page.isLz = isLz||false;
-            Script.getThreadList(page, postId, false, false, isMark, from, true)
+            page.threadId = threadId; page.isLz = option.lz?true:false;
+            page.getList(null, option)
 
             var button = Qt.createComponent("Component/ThreadTabButton.qml").createObject(threadTab.layout)
             button.tab = page
@@ -192,7 +193,7 @@ MyPage {
                 from: 360; to: 0
                 duration: 500
             }
-            onClicked: Script.getThreadList(currentTab, undefined, false, false, false, false, true)
+            onClicked: currentTab.getList()
         }
         ToolButton {
             iconSource: "qrc:/gfx/edit%1.svg".arg(platformInverted?"_inverted":"")
@@ -214,14 +215,45 @@ MyPage {
                 onClicked: currentTab.ding()
             }
             MenuItem {
-                visible: currentTab != null && currentTab.thread.author != undefined && currentTab.thread.author.type != 0
-                text: visible ? currentTab.isLz ? "查看全部" : "只看楼主" : ""
-                onClicked: currentTab.changeLz()
+                visible: currentTab != null && currentTab.thread.author != undefined
+                text: "跳页"
+                onClicked: {
+                    var diag = Qt.createComponent("Dialog/PageJumper.qml").createObject(threadGroupPage);
+                    diag.totalPage = currentTab.totalPage;
+                    diag.currentValue = currentTab.currentPage;
+                    diag.pageJumped.connect(function(){ currentTab.jumpToPage(diag.currentValue) });
+                    diag.open();
+                }
             }
             MenuItem {
                 visible: currentTab != null && currentTab.thread.author != undefined
-                text: visible ? currentTab.isReverse ? "查看原贴" : "倒序查看" : ""
-                onClicked: currentTab.reverseList()
+                text: "选项"
+                ButtonRow {
+                    exclusive: false;
+                    anchors {
+                        right: parent.right; rightMargin: platformStyle.paddingLarge
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: parent.width - 100
+                    ToolButton {
+                        text: "查看原贴"
+                        visible: currentTab ? currentTab.isLz||currentTab.isReverse : false;
+                        flat: false
+                        onClicked: {currentTab.getList("default"); threadMenu.close()}
+                    }
+                    ToolButton {
+                        text: "只看楼主"
+                        visible: currentTab ? !currentTab.isLz : false
+                        flat: false
+                        onClicked: {currentTab.getList("lz"); threadMenu.close()}
+                    }
+                    ToolButton {
+                        text: "倒序查看"
+                        visible: currentTab ? !currentTab.isReverse : false
+                        flat: false
+                        onClicked: {currentTab.getList("reverse"); threadMenu.close()}
+                    }
+                }
             }
             MenuItem {
                 visible: currentTab != null

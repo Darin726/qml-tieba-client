@@ -153,7 +153,13 @@ MyPage {
             MenuItem {
                 text: "跳页"
                 visible: forum.name != undefined
-                onClicked: Qt.createComponent("Dialog/PageJumper.qml").createObject(forumPage).open()
+                onClicked: {
+                    var diag = Qt.createComponent("Dialog/PageJumper.qml").createObject(forumPage);
+                    diag.totalPage = page.total_page
+                    diag.currentValue = pageNumber;
+                    diag.pageJumped.connect(function(){ forumPage.pageNumber = diag.currentValue; internal.getList() })
+                    diag.open()
+                }
             }
             MenuItem {
                 text: "其它"
@@ -241,6 +247,7 @@ MyPage {
         cacheBuffer: height
         model: forumModel
         onVisibleChanged: forceActiveFocus()
+        highlightMoveDuration: 400
         header: PullToActivate {
             myView: view
             pullDownMessage: page.has_prev == 1 ? "下拉返回上一页" : "下拉可以刷新"
@@ -258,11 +265,13 @@ MyPage {
                 onClicked: internal.nextPage()
             }
         }
-        delegate: ListItem {
+        delegate: ListItemF {
             id: listItem
             implicitHeight: contentCol.height + platformStyle.paddingLarge*2
             platformInverted: tbsettings.whiteTheme
-            onClicked: app.enterThread(model.id, model.title)
+            onClicked: {
+                app.enterThread(modelData.id, modelData.title)
+            }
             Column {
                 id: contentCol
                 anchors {
@@ -271,20 +280,34 @@ MyPage {
                 }
                 spacing: platformStyle.paddingSmall
                 ListItemText {
-                    text: model.author.name_show
+                    text: modelData.author.name_show
                     role: "SubTitle"
                     platformInverted: listItem.platformInverted
                 }
                 Label {
                     width: parent.width
-                    text: model.title
+                    text: modelData.title
                     platformInverted: listItem.platformInverted
                     font.pixelSize: tbsettings.fontSize
                     wrapMode: Text.Wrap
                     textFormat: Text.PlainText
                 }
                 ListItemText {
-                    text: model.reply_num+"/"+model.view_num+"  "+model.last_replyer.name_show
+                    width: parent.width;
+                    platformInverted: listItem.platformInverted
+                    role: "SubTitle"
+                    visible: tbsettings.showAbstract && modelData.abstract.length > 0
+                    font.pixelSize: platformStyle.fontSizeMedium
+                    text: visible ? modelData.abstract[0].text : ""
+                }
+                Loader {
+                    Component.onCompleted: {
+                        if (tbsettings.showAbstract && tbsettings.showImage && modelData.pic.length>0)
+                            source = "Component/AbstractImage.qml"
+                    }
+                }
+                ListItemText {
+                    text: modelData.reply_num+"/"+modelData.view_num+"  "+modelData.last_replyer.name_show
                     role: "SubTitle"
                     platformInverted: listItem.platformInverted
                 }
@@ -294,20 +317,23 @@ MyPage {
                     right: listItem.paddingItem.right; top: listItem.paddingItem.top
                 }
                 Image {
-                    visible: source != ""
-                    source: model.is_top == 1 ? "qrc:/gfx/frs_post_top.png":""
+                    visible: modelData.is_top == 1
+                    source: visible ? "qrc:/gfx/frs_post_top.png" : ""
+                    asynchronous: true;
                 }
                 Image {
-                    visible: source != ""
-                    source: model.is_good == 1 ? "qrc:/gfx/frs_post_good.png":""
+                    visible: modelData.is_good == 1
+                    source: visible ? "qrc:/gfx/frs_post_good.png" : ""
+                    asynchronous: true
                 }
                 Image {
-                    visible: source != ""
-                    source: model.comment_num > 0 ? "qrc:/gfx/frs_post_ding.png":""
+                    visible: modelData.comment_num > 0
+                    source: visible ? "qrc:/gfx/frs_post_ding.png" : ""
+                    asynchronous: true
                 }
                 Label {
-                    visible: text != ""
-                    text: model.comment_num || ""
+                    visible: modelData.comment_num > 0
+                    text: visible ? modelData.comment_num : ""
                     color: listItem.platformInverted ? "blue" : "yellow"
                 }
             }
@@ -317,7 +343,7 @@ MyPage {
                 }
                 role: "SubTitle"
                 platformInverted: listItem.platformInverted
-                Component.onCompleted: text = Script.formatDateTime(model.last_time_int*1000)
+                text: Script.formatDateTime(modelData.last_time_int*1000)
             }
         }
     }

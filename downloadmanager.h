@@ -39,19 +39,17 @@ public:
     void setError(const int newError);
 
     QString currentFile() const;
-
     QString errorString() const;
+
+    Q_INVOKABLE void appendDownload(const QString &url, const QString &filename);
+    Q_INVOKABLE bool existsRequest(const QString &url);
+    Q_INVOKABLE bool existsFile(const QString &filename);
+    Q_INVOKABLE void abortDownload(const bool isAll = true);
 
 signals:
     void stateChanged();
     void progressChanged();
     void errorChanged();
-
-public slots:
-    void appendDownload(const QString &url, const QString &filename);
-    bool existsRequest(const QString &url);
-    bool existsFile(const QString &filename);
-    void abortDownload(const bool isAll = true);
 
 private slots:
     void startNextDownload();

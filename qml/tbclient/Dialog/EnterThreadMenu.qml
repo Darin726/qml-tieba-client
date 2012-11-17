@@ -12,10 +12,11 @@ ContextMenu {
         MenuItem {
             text: "查看该回复"
             onClicked: {
-                if (isFloor)
-                    app.enterSubfloor(threadId, "", postId)
-                else
-                    app.enterThread(threadId, undefined, postId, true)
+                if (isFloor){
+                    app.enterSubfloor(threadId, null, postId)
+                } else {
+                    app.enterSubfloor(threadId, postId)
+                }
             }
         }
         MenuItem {

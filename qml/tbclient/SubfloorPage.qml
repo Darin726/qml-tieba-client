@@ -21,22 +21,35 @@ MyPage {
     property string subpostId
     property string postId
 
+    property int manageGroup
+
     property int pageNumber: 1
     onPageNumberChanged: {
         if(pageNumber>page.total_page) pageNumber = page.total_page
     }
 
+    property alias view: subFloorView
+
     function getlist(isRenew){
-        if (!isRenew) pageNumber ++
-        else pageNumber = 1
-        Script.getSubFloorList(subFloorPage, threadId, postId, subpostId, pageNumber, subpostList, isRenew)
+        pageNumber = isRenew ? 1 : pageNumber + 1
+        var opt = {
+            pid: postId, pn: pageNumber, spid: postId==0?subpostId:0, renew: isRenew?1:0
+        }
+        Script.getSubfloorList(subFloorPage, threadId, opt)
     }
+
     function addReply(vcode, vcodeMd5){
         if (replyField.text==""){
             app.showMessage("请输入回复内容")
         } else {
             Script.postReply(subFloorPage, replyField.text, forum, threadId, post.floor, post.id, vcode, vcodeMd5)
         }
+    }
+
+    function commitprison(name){
+        var diag = Qt.createComponent("Dialog/CommitPrisonDialog.qml").createObject(subFloorPage)
+        diag.userName = name; diag.caller = subFloorPage;
+        diag.open()
     }
 
     Connections {
@@ -54,8 +67,6 @@ MyPage {
         onGetSubfloorListSuccessed: {
             if (caller == subFloorPage.toString()){
                 loading = false
-                if (isRenew)
-                    subFloorView.positionViewAtBeginning()
             }
         }
         onPostReplyStarted: {
@@ -94,6 +105,28 @@ MyPage {
         onSwipeRight: {
             if (status == PageStatus.Active)
                 pageStack.pop()
+        }
+        onManageFailed: {
+            if (caller == subFloorPage.toString()){
+                app.showMessage(errorString)
+            }
+        }
+        onManageSuccessed: {
+            if (caller == subFloorPage.toString()){
+                app.showMessage("操作成功");
+                if (option == "delpost"){
+                    if (postId == post.id){
+                        pageStack.pop()
+                    } else {
+                        for (var i=0, l=subpostList.count;i<l;i++){
+                            if (subpostList.get(i).data.id == postId){
+                                subpostList.remove(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
         onLoadFailed: loading = false;
     }
@@ -169,13 +202,14 @@ MyPage {
                 MouseArea{
                     anchors.fill: parent
                     onPressAndHold: {
-                        pageStack.push(Qt.resolvedUrl("Component/CopyPage.qml"), { sourceObject: post.content })
+                        var diag = Qt.createComponent("Dialog/SubfloorMenu.qml").createObject(subFloorPage)
+                        diag.modelData = post;
+                        diag.open()
                     }
                 }
                 Rectangle {
                     anchors.fill: parent
-                    color: tbsettings.whiteTheme ? "#E6E6E6" : "#202020"
-                    opacity: 0.8
+                    color: tbsettings.whiteTheme ? "#C0E6E6E6" : "#C0202020"
                 }
                 ListItemText {
                     anchors {
@@ -193,9 +227,15 @@ MyPage {
                     Row {
                         spacing: platformStyle.paddingMedium
                         Image {
-                            sourceSize.height: platformStyle.graphicSizeMedium
-                            Component.onCompleted: if (post.author.type != 0 && tbsettings.showAvatar)
-                                                       source = "http://tb.himg.baidu.com/sys/portraitn/item/"+post.author.portrait
+                            width: platformStyle.graphicSizeMedium; height: platformStyle.graphicSizeMedium;
+                            sourceSize: Qt.size(width, height)
+                            Component.onCompleted: {
+                                if (post.author.type != 0 && tbsettings.showAvatar){
+                                    source = "http://tb.himg.baidu.com/sys/portraitn/item/"+post.author.portrait
+                                } else {
+                                    source = "qrc:/gfx/photo.png"
+                                }
+                            }
                         }
                         ListItemText {
                             text: post.author.name_show +
@@ -235,39 +275,41 @@ MyPage {
             ListItemT {
                 id: listItem
                 platformInverted: tbsettings.whiteTheme
-                implicitHeight: delegateCol.height + platformStyle.paddingLarge*2
-                onClicked: {replyField.text = "回复 "+author.name+" :"; replyField.focus = true;}
+                implicitHeight: authorShow.height + contentShow.height + 32
+                onClicked: {replyField.text = "回复 "+modelData.author.name+" :"; replyField.focus = true;}
                 onPressAndHold: {
-                    pageStack.push(Qt.resolvedUrl("Component/CopyPage.qml"),
-                                   { sourceObject: [{text: contentString}] })
-                }
-                Column {
-                    id: delegateCol
-                    anchors {
-                        left: listItem.paddingItem.left; top: listItem.paddingItem.top;
-                        right: listItem.paddingItem.right
-                    }
-                    spacing: platformStyle.paddingMedium
-                    ListItemText {
-                        platformInverted: listItem.platformInverted
-                        text: author.name_show
-                        role: "SubTitle"
-                    }
-                    Label {
-                        width: parent.width
-                        text: contentString
-                        font.pixelSize: tbsettings.fontSize
-                        platformInverted: listItem.platformInverted
-                        textFormat: Text.RichText
-                        wrapMode: Text.Wrap
-                        onLinkActivated: signalCenter.linkActivated(link)
-                    }
+                    var diag = Qt.createComponent("Dialog/SubfloorMenu.qml").createObject(subFloorPage)
+                    diag.modelData = modelData;
+                    diag.open()
                 }
                 ListItemText {
-                    platformInverted: parent.platformInverted
-                    anchors { right: parent.right; top: parent.paddingItem.top }
-                    text: Qt.formatDateTime(new Date(time*1000), "yyyy-MM-dd hh:mm:ss")
+                    id: authorShow
+                    anchors {
+                        left: listItem.paddingItem.left; top: listItem.paddingItem.top;
+                    }
+                    text: modelData.author.name_show
+                    platformInverted: listItem.platformInverted
                     role: "SubTitle"
+                }
+                ListItemText {
+                    platformInverted: listItem.platformInverted
+                    anchors {
+                        right: listItem.paddingItem.right; top: listItem.paddingItem.top
+                    }
+                    text: Qt.formatDateTime(new Date(modelData.time*1000), "yyyy-MM-dd hh:mm:ss")
+                    role: "SubTitle"
+                }
+                Label {
+                    id: contentShow
+                    anchors {
+                        left: listItem.paddingItem.left; right: listItem.paddingItem.right;
+                        top: authorShow.bottom; topMargin: platformStyle.paddingMedium
+                    }
+                    text: modelData.contentString
+                    font.pixelSize: tbsettings.fontSize
+                    platformInverted: listItem.platformInverted
+                    wrapMode: Text.Wrap
+                    onLinkActivated: signalCenter.linkActivated(link)
                 }
             }
         }

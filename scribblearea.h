@@ -24,15 +24,12 @@ signals:
     void modifiedChanged();
 
 protected:
-    //bool event(QEvent *event);
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *);
     void resizeImage(QImage *image, const QSize &newSize);
-
-public slots:
 
 private:
     QColor m_color;

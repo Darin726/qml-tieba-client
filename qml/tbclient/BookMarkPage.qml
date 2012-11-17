@@ -60,7 +60,7 @@ MyPage {
             id: root
             platformInverted: tbsettings.whiteTheme
             implicitHeight: contentCol.height + platformStyle.paddingLarge*2
-            onClicked: app.enterThread(threadId, title, postId, true, "tb_bookmarklist", isLz)
+            onClicked: app.enterThread(threadId, title, postId, 1, isLz)
             Column {
                 id: contentCol
                 anchors {

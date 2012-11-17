@@ -45,7 +45,7 @@ QtObject {
 
     signal getSubfloorListStarted(string caller)
     signal getSubfloorListFailed(string caller, string errorString)
-    signal getSubfloorListSuccessed(string caller, bool isRenew)
+    signal getSubfloorListSuccessed(string caller)
 
     signal getReplyListStarted
     signal getReplyListFailed(string errorString)
@@ -84,6 +84,9 @@ QtObject {
     signal postArticleStarted(string caller)
     signal postArticleFailed(string caller, string errorString)
     signal postArticleSuccessed(string caller)
+
+    signal manageFailed(string caller, string errorString)
+    signal manageSuccessed(string caller, string option, string postId)
 
     signal postImage(string caller, string url)
     signal emotionSelected(string caller, string name)

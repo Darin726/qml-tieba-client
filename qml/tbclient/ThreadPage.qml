@@ -10,35 +10,70 @@ Page {
 
     property variant forum: ({})
     property variant thread: ({})
+    property int manageGroup
+
     property alias listModel: threadModel
     property alias threadView: view
-//    property variant imageList: []
 
     property bool hasFloor
     property bool isLz: false
-    property bool hasMore: false
-    property bool hasPrev: false
     property bool isReverse: false
+    property bool hasUpwards: false
+    property bool hasDownwards: false
+
+    property int topPage: 1
+    property int downPage: 1
+    property int currentPage: 1
+    property int totalPage: 1
 
     property bool loading: false
+    property bool jumpable: true
 
-    function loadMore(){
-        if (threadModel.count > 0)
-            Script.getThreadList(threadPage, threadModel.get(threadModel.count-1).data.id, false)
+    function getList(type, option){
+        switch (type){
+        case "lz": isLz = true; isReverse = false; jumpable = true; break;
+        case "reverse": isReverse = true; isLz = false; jumpable = false; break;
+        case "default": isLz = false; isReverse = false; jumpable = true; break;
+        default: jumpable = true; break;
+        }
+        if (option && option.hasOwnProperty("jumpable")) jumpable = option.jumpable
+        var opt = {
+            lz: isLz?1:0, r: isReverse?1:0, last: isReverse?1:0, pn: jumpable?1:0, renew: 1
+        }
+        if (option){
+            for (var i in option) opt[i] = option[i]
+        }
+        Script.getThreadList(threadPage, threadId, opt)
     }
-    function loadPrev(){
-        if (threadModel.count > 0)
-            Script.getThreadList(threadPage, threadModel.get(0).data.id, true)
+    function loadUpwards(){
+        if (threadModel.count > 0){
+            var opt = {
+                lz: isLz?1:0,
+                pid: threadModel.get(0).data.id,
+                pn: hasUpwards&&jumpable?isReverse?topPage+1:topPage-1:0,
+                r: isReverse?1:0,
+                back: 1
+            }
+            Script.getThreadList(threadPage, threadId, opt)
+        }
     }
-    function reverseList(){
-        isReverse = !isReverse
-        isLz = false
-        Script.getThreadList(threadPage, undefined, false, true, undefined, undefined, true)
+    function loadDownwards(){
+        if (threadModel.count > 0){
+            var opt = {
+                lz: isLz?1:0,
+                pid: threadModel.get(threadModel.count-1).data.id,
+                pn: hasDownwards&&jumpable?isReverse?downPage-1:downPage+1:0,
+                r: isReverse?1:0
+            }
+            Script.getThreadList(threadPage, threadId, opt)
+        }
     }
-    function changeLz(){
-        isLz = !isLz
-        isReverse = false
-        Script.getThreadList(threadPage, undefined, undefined, undefined, undefined, undefined, true)
+    function jumpToPage(page){
+        jumpable = true;
+        var opt = {
+            lz: isLz?1:0, pn: page, r: isReverse?1:0, renew: 1
+        }
+        Script.getThreadList(threadPage, threadId, opt)
     }
     function postReply(){
         replyLoader.item.postReply()
@@ -46,7 +81,11 @@ Page {
     function ding(){
         Script.ding(threadPage.toString(), forum, threadId)
     }
-
+    function commitprison(name){
+        var diag = Qt.createComponent("Dialog/CommitPrisonDialog.qml").createObject(threadPage)
+        diag.userName = name; diag.caller = threadPage;
+        diag.open()
+    }
     Connections {
         target: signalCenter
         onLoadThreadStarted: {
@@ -70,6 +109,27 @@ Page {
             if (caller == threadPage.toString())
                 app.showMessage("成功")
         }
+        onManageFailed: {
+            if (caller == threadPage.toString()){
+                app.showMessage(errorString)
+            }
+        }
+        onManageSuccessed: {
+            if (caller == threadPage.toString()){
+                app.showMessage("操作成功");
+                if (option == "delpost"){
+                    for (var i=0,l=threadModel.count;i<l;i++){
+                        if (threadModel.get(i).data.id == postId){
+                            threadModel.remove(i);
+                            break;
+                        }
+                    }
+                } else if (option == "delthread"){
+                    threadGroupPage.internal.removeThreadPage(threadPage)
+                }
+            }
+        }
+
         onLoadFailed: loading = false;
     }
 
@@ -79,132 +139,160 @@ Page {
         property bool atYEndCache
         anchors { fill: parent; bottomMargin: replyLoader.height }
         clip: true
-        cacheBuffer: height
         focus: true
+        cacheBuffer: height
         model: threadModel
-        delegate: ListItemT {
-            id: listItem
-            implicitHeight: contentCol.height + platformStyle.paddingLarge
-            platformInverted: tbsettings.whiteTheme
-            onClicked: {
-                if (threadPage.hasFloor && modelData.floor!=1)
-                    app.enterSubfloor(threadId, modelData.id, undefined, isLz)
-                else
-                    pressAndHold()
+        highlightMoveDuration: 400
+        delegate: delegateItem;
+        header: Item {
+            width: screen.width; height: visible ? platformStyle.graphicSizeLarge : 0
+            visible: (threadPage.isReverse||threadPage.hasUpwards) && view.count > 0
+            Button {
+                width: parent.width - platformStyle.paddingLarge*2
+                anchors.centerIn: parent
+                platformInverted: tbsettings.whiteTheme
+                enabled: !threadPage.loading
+                text: threadPage.loading ? "加载中..." : threadPage.hasUpwards ? "加载更多" : "已无更多，点击继续加载"
+                onClicked: loadUpwards()
             }
-            onPressAndHold: {
-                itemMenu.currentIndex = index
-                itemMenu.open()
+        }
+        footer: Item {
+            width: screen.width; height: visible ? platformStyle.graphicSizeLarge : 0
+            visible: (!threadPage.isReverse||threadPage.hasDownwards) && view.count>0
+            Button {
+                width: parent.width - platformStyle.paddingLarge*2
+                anchors.centerIn: parent
+                platformInverted: tbsettings.whiteTheme
+                enabled: !threadPage.loading
+                text: threadPage.loading ? "加载中..." : threadPage.hasDownwards ? "加载更多" : "已无更多，点击继续加载"
+                onClicked: loadDownwards()
             }
-            ListItemText {
-                anchors.right: parent.right
-                text: modelData.floor+"#"
-                role: "SubTitle"
-                platformInverted: parent.platformInverted
-            }
-            Row {
-                anchors {
-                    left: listItem.paddingItem.left; bottom: listItem.paddingItem.bottom
+        }
+        Component {
+            id: delegateItem
+            ListItemT {
+                id: listItem
+                implicitHeight: contentCol.height + platformStyle.paddingLarge
+                platformInverted: tbsettings.whiteTheme
+                onClicked: {
+                    if (threadPage.hasFloor && modelData.floor!=1)
+                        app.enterSubfloor(threadId, modelData.id, undefined, isLz, manageGroup)
+                    else
+                        pressAndHold()
                 }
-                Component.onCompleted: if (modelData.floor == 1 || !threadPage.hasFloor)
-                                           visible = false
-                Image {
-                    y: 1
-                    source: "qrc:/gfx/pb_reply.png"
+                onPressAndHold: {
+                    var itemMenu = Qt.createComponent("Dialog/ThreadMenu.qml").createObject(threadPage)
+                    itemMenu.currentIndex = index; itemMenu.modelData = modelData;
+                    itemMenu.open()
                 }
-                ListItemText {
-                    platformInverted: listItem.platformInverted
-                    text: modelData.sub_post_number||0
-                    role: "SubTitle"
-                }
-            }
-            Column {
-                id: contentCol
-                width: parent.width
-                spacing: platformStyle.paddingMedium
-                Row {
-                    height: platformStyle.graphicSizeMedium
+                Column {
+                    id: contentCol
+                    width: parent.width
                     spacing: platformStyle.paddingMedium
-                    Image {
-                        sourceSize.height: platformStyle.graphicSizeMedium
-                        Component.onCompleted: if (tbsettings.showAvatar && modelData.author.type != 0)
-                                                   source = "http://tb.himg.baidu.com/sys/portraitn/item/"+modelData.author.portrait
-                    }
-                    ListItemText {
-                        anchors.verticalCenter: parent.verticalCenter
-                        platformInverted: listItem.platformInverted
-                        role: "SubTitle"
-                        Component.onCompleted: {
-                            var a = modelData.author
-                            text = a.name_show + (a.is_like==1?"\nLv."+a.level_id:"")
+                    Item {
+                        width: parent.width; height: platformStyle.graphicSizeMedium
+                        Image {
+                            id: avatarImage
+                            width: platformStyle.graphicSizeMedium; height: platformStyle.graphicSizeMedium
+                            sourceSize: Qt.size(width, height)
+                            asynchronous: true;
+                            Component.onCompleted: {
+                                if (tbsettings.showAvatar && modelData.author.type != 0){
+                                    source = "http://tb.himg.baidu.com/sys/portraitn/item/"+modelData.author.portrait
+                                } else {
+                                    source = "qrc:/gfx/photo.png"
+                                }
+                            }
+                            Image {
+                                asynchronous: true;
+                                anchors.fill: parent
+                                sourceSize: Qt.size(width, height)
+                                visible: parent.status != Image.Ready
+                                source: visible ? "qrc:/gfx/photo.png" : ""
+                            }
+                            MouseArea {
+                                anchors.fill: parent;
+                                onClicked: {
+                                    if (modelData.author.type != 0)
+                                        app.enterProfilePage(modelData.author.id)
+                                }
+                            }
+                        }
+                        ListItemText {
+                            anchors {
+                                left: avatarImage.right; leftMargin: platformStyle.paddingMedium; verticalCenter: parent.verticalCenter
+                            }
+                            platformInverted: listItem.platformInverted
+                            role: "SubTitle"
+                            Component.onCompleted: {
+                                var a = modelData.author
+                                text = a.name_show + (a.is_like==1?"\nLv."+a.level_id:"")
+                            }
+                        }
+                        ListItemText {
+                            anchors.right: parent.right
+                            text: modelData.floor+"#"
+                            role: "SubTitle"
+                            platformInverted: listItem.platformInverted
                         }
                     }
-                }
-                Repeater {
-                    model: modelData.contentData
-                    Loader {
-                        anchors {
-                            left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
-                        }
-                        Component.onCompleted: {
-                            if (modelData[0])
-                                sourceComponent = delegateLabel
-                            else
-                                source = "Component/DelegateImage.qml"
-                        }
-                        Component {
-                            id: delegateLabel
-                            Label {
-                                wrapMode: Text.Wrap
-                                platformInverted: listItem.platformInverted
-                                font.pixelSize: tbsettings.fontSize
-                                onLinkActivated: signalCenter.linkActivated(link)
-                                Component.onCompleted: {
-                                    if (modelData[2]){
-                                        text = modelData[1].replace(/\n/g,"<br/>")
-                                        textFormat = Text.RichText
-                                    } else {
-                                        text = modelData[1]
-                                        textFormat = Text.PlainText
+                    Repeater {
+                        model: modelData.contentData
+                        Loader {
+                            x: platformStyle.paddingLarge
+                            Component.onCompleted: {
+                                if (modelData[0])
+                                    sourceComponent = delegateLabel
+                                else
+                                    source = "Component/DelegateImage.qml"
+                            }
+                            Component {
+                                id: delegateLabel
+                                Label {
+                                    width: contentCol.width - platformStyle.paddingLarge*2
+                                    wrapMode: Text.Wrap
+                                    platformInverted: listItem.platformInverted
+                                    font.pixelSize: tbsettings.fontSize
+                                    onLinkActivated: signalCenter.linkActivated(link)
+                                    Component.onCompleted: {
+                                        if (modelData[2]){
+                                            textFormat = Text.RichText
+                                            text = modelData[1].replace(/\n/g,"<br/>")
+                                        } else {
+                                            textFormat = Text.PlainText
+                                            text = modelData[1]
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                ListItemText {
-                    anchors {
-                        right: parent.right; rightMargin: platformStyle.paddingSmall
+                    ListItemText {
+                        anchors {
+                            right: parent.right; rightMargin: platformStyle.paddingSmall
+                        }
+                        platformInverted: listItem.platformInverted
+                        text: Qt.formatDateTime(new Date(modelData.time*1000),"yyyy-MM-dd hh:mm:ss")
+                        role: "SubTitle"
                     }
-                    platformInverted: listItem.platformInverted
-                    text: Qt.formatDateTime(new Date(modelData.time*1000),"yyyy-MM-dd hh:mm:ss")
-                    role: "SubTitle"
                 }
-            }
-        }
-        header: Item {
-            width: screen.width; height: visible ? platformStyle.graphicSizeLarge : 0
-            visible: (threadPage.isReverse || threadPage.hasPrev) && view.count>0
-            Button {
-                width: parent.width - platformStyle.paddingLarge*2
-                anchors.centerIn: parent
-                platformInverted: tbsettings.whiteTheme
-                enabled: !threadPage.loading
-                text: threadPage.loading ? "加载中..." : threadPage.hasPrev ? "加载更多" : "已无更多，点击继续加载"
-                onClicked: loadPrev()
-            }
-        }
-
-        footer: Item {
-            width: screen.width; height: visible ? platformStyle.graphicSizeLarge : 0
-            visible: (!threadPage.isReverse || threadPage.hasMore) && view.count>0
-            Button {
-                width: parent.width - platformStyle.paddingLarge*2
-                anchors.centerIn: parent
-                platformInverted: tbsettings.whiteTheme
-                enabled: !threadPage.loading
-                text: threadPage.loading?"加载中...":threadPage.hasMore?"加载更多":"已无更多，点击继续加载"
-                onClicked: loadMore()
+                Row {
+                    anchors {
+                        left: listItem.paddingItem.left; bottom: listItem.paddingItem.bottom
+                    }
+                    Component.onCompleted: if (modelData.floor == 1 || !threadPage.hasFloor)
+                                               visible = false
+                    Image {
+                        y: 1
+                        asynchronous: true;
+                        source: "qrc:/gfx/pb_reply.png"
+                    }
+                    ListItemText {
+                        platformInverted: listItem.platformInverted
+                        text: modelData.sub_post_number||0
+                        role: "SubTitle"
+                    }
+                }
             }
         }
     }
@@ -244,47 +332,6 @@ Page {
         anchors.bottom: parent.bottom
         width: parent.width
         height: 0
-    }
-
-    ContextMenu {
-        id: itemMenu
-        property int currentIndex
-        MenuLayout {
-            MenuItem {
-                text: "添加到书签"
-                onClicked: {
-                    app.addBookmark(threadId, threadModel.get(itemMenu.currentIndex).data.id, thread.author.name_show, thread.title, isLz)
-                }
-            }
-            MenuItem {
-                text: "回复"
-                onClicked: {
-                    threadPage.state = "replyAreaOpened"
-                    replyLoader.item.floorNum = threadModel.get(itemMenu.currentIndex).data.floor
-                    replyLoader.item.quoteId = threadModel.get(itemMenu.currentIndex).data.id
-                }
-            }
-            MenuItem {
-                text: "阅读模式"
-                onClicked: app.pageStack.push(Qt.resolvedUrl("Reader.qml")
-                                              ,{ currentIndex: itemMenu.currentIndex, myView: threadView})
-            }
-            MenuItem {
-                text: "复制内容"
-                onClicked: app.pageStack.push(Qt.resolvedUrl("Component/CopyPage.qml"),
-                                              { sourceObject: threadModel.get(itemMenu.currentIndex).data.content })
-            }
-            MenuItem {
-                text: "查看用户资料"
-                onClicked: {
-                    var a = threadModel.get(itemMenu.currentIndex).data.author
-                    if (a.type == 0)
-                        app.showMessage("匿名用户")
-                    else
-                        app.enterProfilePage(a.id)
-                }
-            }
-        }
     }
 
     states: [

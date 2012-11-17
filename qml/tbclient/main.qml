@@ -77,8 +77,10 @@ PageStackWindow {
         onPinchFinished: {
             var delta1 = pinch.point1.x - pinch.startPoint1.x
             var delta2 = pinch.point2.x - pinch.startPoint2.x
-            if ( Math.max(delta1, delta2) < -20 ) signalCenter.swipeLeft()
-            else if ( Math.min(delta1, delta2)>20 ) signalCenter.swipeRight()
+            if (Math.abs(pinch.point2.y-pinch.startPoint2.y)<200 && Math.abs(pinch.point1.y - pinch.startPoint1.y)<200){
+                if ( Math.max(delta1, delta2) < -50 ) signalCenter.swipeLeft()
+                else if ( Math.min(delta1, delta2)>50 ) signalCenter.swipeRight()
+            }
         }
     }
 
@@ -88,7 +90,7 @@ PageStackWindow {
 
     Image {
         parent: pageStack; width: screen.width; height: screen.height
-        sourceSize.width: 640; fillMode: Image.PreserveAspectCrop
+        sourceSize.height: 640; fillMode: Image.PreserveAspectCrop
         source: tbsettings.backgroundImage
         visible: source != ""
         smooth: true
@@ -115,6 +117,7 @@ PageStackWindow {
             }
         }
     }
+
     Connections {
         target: signalCenter
         onPostImage: {
@@ -264,19 +267,28 @@ PageStackWindow {
         if (tab)
             messagePage.currentTab = tab
     }
+
     function enterForum(forumName){
         pageStack.push(Qt.resolvedUrl("ForumPage.qml"),{ forumName: forumName }).internal.getList()
     }
-    function enterThread(threadId, threadName, postId, isMark, from, isLz){
-        threadGroupPage.internal.addThreadPage(threadId, threadName, postId, isMark, from, isLz)
+
+    function enterThread(threadId, threadName, postId, isMark, isLz){
+        var opt = {pid: postId||0, mark: isMark||0, lz: isLz=="true"?1:0, jumpable: postId?false:true}
+        threadGroupPage.internal.addThreadPage(threadId, threadName, opt)
         if (pageStack.currentPage != threadGroupPage)
             pageStack.push(threadGroupPage)
     }
-    function enterSubfloor(threadId, postId, subpostId, isLz){
-        pageStack.push(Qt.resolvedUrl("SubfloorPage.qml"),
-                       { threadId: threadId, subpostId: subpostId||"", postId: postId, isLz: isLz||false })
-        .getlist(true)
+
+    function enterSubfloor(threadId, postId, subpostId, isLz, manageGroup){
+        var page = pageStack.push(Qt.resolvedUrl("SubfloorPage.qml"),
+                                  { threadId: threadId,
+                                      postId: postId||0,
+                                      subpostId: subpostId||0,
+                                      isLz: isLz||false,
+                                      manageGroup: manageGroup||0})
+        page.getlist(true);
     }
+
     function enterProfilePage(userId){
         if (userId == Script.userId){
             if (pageStack.currentPage != profilePage)

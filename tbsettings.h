@@ -28,6 +28,7 @@ class TBSettings : public QObject
     Q_PROPERTY(bool remindReplyToMe READ remindReplyToMe WRITE setRemindReplyToMe NOTIFY remindReplyToMeChanged)
     Q_PROPERTY(bool remindAtMe READ remindAtMe WRITE setRemindAtMe NOTIFY remindAtMeChanged)
     Q_PROPERTY(QString signText READ signText WRITE setSignText NOTIFY signTextChanged)
+    Q_PROPERTY(bool showAbstract READ showAbstract WRITE setShowAbstract NOTIFY showAbstractChanged)
 //    Q_PROPERTY(int imageQuality READ imageQuality WRITE setImageQuality NOTIFY imageQualityChanged)
 
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
@@ -89,6 +90,9 @@ public:
     QString signText() const;
     void setSignText(const QString &signText);
 
+    bool showAbstract() const;
+    void setShowAbstract(const bool &showAbstract);
+
 //    int imageQuality() const;
 //    void setImageQuality(const int &imageQuality);
 
@@ -99,6 +103,10 @@ public:
     QString imei() const;
 
     QString appVersion() const;
+
+    Q_INVOKABLE void saveSettings();
+    Q_INVOKABLE void clear();
+    Q_INVOKABLE void resetImagePath();
 
 signals:
     void remindFrequencyChanged();
@@ -117,12 +125,8 @@ signals:
     void remindReplyToMeChanged();
     void remindAtMeChanged();
     void signTextChanged();
+    void showAbstractChanged();
 //    void imageQualityChanged();
-
-public slots:
-    void saveSettings();
-    void clear();
-    void resetImagePath();
 
 private:
     void loadSettings();
@@ -143,6 +147,7 @@ private:
     bool m_remindReplyToMe;
     bool m_remindAtMe;
     QString m_signText;
+    bool m_showAbstract;
 //    int m_imageQuality;
 
     QString m_appVersion;

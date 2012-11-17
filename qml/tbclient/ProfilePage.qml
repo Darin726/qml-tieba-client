@@ -19,7 +19,7 @@ MyPage {
         ToolButton {
             enabled: !loading
             text: loading ? "正在加载" : hasConcerned ? "取消关注" : "关注"
-            onClicked: Script.concern(profilePage, !hasConcerned)
+            onClicked: Script.followFriend(profilePage, !hasConcerned)
         }
     }
 
@@ -58,6 +58,7 @@ MyPage {
                 app.showMessage("成功")
             }
         }
+        onLoadFailed: loading = false;
     }
 
     Flickable {

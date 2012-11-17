@@ -10,17 +10,30 @@ MyPage {
         }
     }
     title: "设置中心"
-
+    onStatusChanged: {
+        if (status == PageStatus.Active && !contentLoader.sourceComponent){
+            contentLoader.sourceComponent = contentComp
+        } else if (status == PageStatus.Deactivating){
+            contentLoader.sourceComponent = undefined
+        }
+    }
     Flickable {
         id: flick
         anchors {
             fill: parent; leftMargin: platformStyle.paddingMedium; rightMargin: platformStyle.paddingMedium
         }
         contentWidth: width
-        contentHeight: contentCol.height
+        contentHeight: contentLoader.height
+        Loader {
+            id: contentLoader
+            width: parent.width
+        }
+    }
+    Component {
+        id: contentComp
         Column {
             id: contentCol
-            width: parent.width
+            width: parent ? parent.width : screen.width;
             MenuItem {
                 width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
                 platformInverted: tbsettings.whiteTheme
@@ -86,6 +99,22 @@ MyPage {
                 onClicked: tbsettings.backgroundImage = utility.choosePhoto()||tbsettings.backgroundImage
             }
             SectionLabel { label: "内容" }
+            Label {
+                height: platformStyle.graphicSizeMedium
+                verticalAlignment: Text.AlignVCenter
+                text: "摘要模式:"
+                platformInverted: tbsettings.whiteTheme
+            }
+            ButtonRow {
+                width: parent.width
+                exclusive: false
+                Button {
+                    text: "开"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.showAbstract; onClicked: tbsettings.showAbstract = true
+                }
+                Button {
+                    text: "关"; platformInverted: tbsettings.whiteTheme; checked: !tbsettings.showAbstract; onClicked: tbsettings.showAbstract = false
+                }
+            }
             Label {
                 height: platformStyle.graphicSizeMedium
                 verticalAlignment: Text.AlignVCenter
@@ -256,19 +285,22 @@ MyPage {
                     Qt.createComponent("Dialog/SetSignDialog.qml").createObject(settingPage).open()
                 }
             }
-            ListItem {
+            MenuItem {
                 width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
                 platformInverted: tbsettings.whiteTheme
-                subItemIndicator: true
-                Label {
-                    anchors {
-                        left: parent.left; leftMargin: platformStyle.paddingMedium;
-                        top: parent.paddingItem.top;
-                    }
-                    text: "自定义表情"
-                    platformInverted: tbsettings.whiteTheme
-                }
+                platformSubItemIndicator: true;
+                text: "自定义表情"
                 onClicked: pageStack.push(Qt.resolvedUrl("CustomEmoPage.qml"))
+            }
+            MenuItem {
+                width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
+                platformInverted: tbsettings.whiteTheme
+                text: "清空网络缓存 (当前:"+Math.round(utility.cacheSize()/1024)+"kb)"
+                onClicked: {
+                    utility.clearNetworkCache()
+                    text = "清空网络缓存 (当前:"+Math.round(utility.cacheSize()/1024)+"kb)"
+                    app.showMessage("缓存已清空")
+                }
             }
         }
     }

@@ -56,56 +56,17 @@ Item {
     implicitWidth: ListView.view ? ListView.view.width : screen.width
     implicitHeight: platformStyle.graphicSizeLarge
 
-//    Item {
-//        id: background
-//        anchors.fill: parent
-
-        Rectangle {
-            height: 1
-            color: root.platformInverted ? platformStyle.colorDisabledLightInverted
-                                         : platformStyle.colorDisabledMid
-            anchors {
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-            }
-        }
-/*
-        Loader {
-            id: faderLoader
-            opacity: 0
-            anchors.fill: background
-            sourceComponent: root.mode != "normal" && root.mode != "pressed" ? fader : undefined
-        }
-
-
-        BorderImage {
-            id: highlight
-            border {
-                left: platformStyle.borderSizeMedium
-                top: platformStyle.borderSizeMedium
-                right: platformStyle.borderSizeMedium
-                bottom: platformStyle.borderSizeMedium
-            }
-            opacity: 0
-            anchors.fill: background
+    Rectangle {
+        height: 1
+        color: root.platformInverted ? platformStyle.colorDisabledLightInverted
+                                     : platformStyle.colorDisabledMid
+        anchors {
+            bottom: parent.bottom
+            left: parent.left
+            right: parent.right
         }
     }
 
-    Component {
-        id: fader
-
-        BorderImage {
-            source: privateStyle.imagePath("qtg_fr_list_" + mode, root.platformInverted)
-            border {
-                left: platformStyle.borderSizeMedium
-                top: platformStyle.borderSizeMedium
-                right: platformStyle.borderSizeMedium
-                bottom: platformStyle.borderSizeMedium
-            }
-        }
-    }
-*/
     MouseArea {
         id: mouseArea
         anchors.fill: parent
@@ -131,32 +92,6 @@ Item {
             internal.state = ""
         }
     }
-/*
-    Loader {
-        id: iconLoader
-        sourceComponent: root.subItemIndicator ? subItemIcon : undefined
-        anchors {
-            right: parent.right
-            rightMargin: privateStyle.scrollBarThickness
-            verticalCenter: parent.verticalCenter
-        }
-    }
-
-    Component {
-        id: subItemIcon
-
-        Image {
-            source: privateStyle.imagePath(
-                root.enabled ? "qtg_graf_drill_down_indicator"
-                             : "qtg_graf_drill_down_indicator_disabled",
-                root.platformInverted)
-            mirror: LayoutMirroring.enabled
-            sourceSize.width: platformStyle.graphicSizeSmall
-            sourceSize.height: platformStyle.graphicSizeSmall
-        }
-    }
-*/
-
     Keys.onReleased: {
         if (!event.isAutoRepeat && root.enabled) {
             if (event.key == Qt.Key_Select || event.key == Qt.Key_Return || event.key == Qt.Key_Enter) {
@@ -176,12 +111,6 @@ Item {
                         symbian.listInteractionMode = Symbian.KeyNavigation
                     else
                         if (root.enabled) {
-/*
-                            highlight.source = privateStyle.imagePath("qtg_fr_list_pressed",
-                                                                      root.platformInverted)
-                            highlight.opacity = 1
-                            releasedEffect.restart()
-*/
                             root.clicked()
                         }
                     event.accepted = true
@@ -219,75 +148,13 @@ Item {
         if (event.key == Qt.Key_Up || event.key == Qt.Key_Down)
             symbian.privateListItemKeyNavigation(ListView.view)
     }
-/*
-    ListView.onRemove: SequentialAnimation {
-        PropertyAction { target: root; property: "ListView.delayRemove"; value: true }
-        ParallelAnimation {
-            SequentialAnimation {
-                PauseAnimation { duration: 50 }
-                NumberAnimation {
-                    target: root
-                    property: "height"
-                    to: 0
-                    duration: 200
-                    easing.type: Easing.OutQuad
-                }
-            }
-            NumberAnimation {
-                target: root
-                property: "opacity"
-                from: 1
-                to: 0
-                duration: 200
-                easing.type: Easing.Linear
-            }
-        }
-        PropertyAction { target: root; property: "ListView.delayRemove"; value: false }
-    }
 
-    ListView.onAdd: SequentialAnimation {
-        PropertyAction { target: root; property: "height"; value: 0 }
-        ParallelAnimation {
-            NumberAnimation {
-                target: root
-                property: "height"
-                to: root.height
-                duration: 250
-                easing.type: Easing.OutQuad
-            }
-            NumberAnimation {
-                target: root
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: 250
-                easing.type: Easing.Linear
-            }
-        }
-    }
-
-    SequentialAnimation {
-        id: releasedEffect
-        PropertyAnimation {
-            target: highlight
-            property: "opacity"
-            to: 0
-            easing.type: Easing.Linear
-            duration: 150
-        }
-    }
-*/
     Item {
         // non-visible item to create a padding boundary that content items can bind to
         id: paddingItem
         anchors {
             left: parent.left; right: parent.right; top: parent.top; bottom: parent.bottom
             leftMargin: platformStyle.paddingLarge
-/*
-            rightMargin: iconLoader.status == Loader.Ready ?
-                    privateStyle.scrollBarThickness + iconLoader.width + platformStyle.paddingMedium :
-                    privateStyle.scrollBarThickness
-*/
             rightMargin: privateStyle.scrollBarThickness
             topMargin: platformStyle.paddingLarge
             bottomMargin: platformStyle.paddingLarge
@@ -314,26 +181,14 @@ Item {
 
         function press() {
             privateStyle.play(Symbian.BasicItem)
-/*
-            highlight.source = privateStyle.imagePath("qtg_fr_list_pressed", root.platformInverted)
-            highlight.opacity = 1
-            if (root.ListView.view)
-                root.ListView.view.currentIndex = index
-*/
         }
 
         function release() {
             if (symbian.listInteractionMode != Symbian.KeyNavigation)
                 privateStyle.play(Symbian.BasicItem)
-/*
-            releasedEffect.restart()
-*/
         }
 
         function releaseHold() {
-/*
-            releasedEffect.restart()
-*/
         }
 
         function hold() {
@@ -341,21 +196,12 @@ Item {
         }
 
         function disable() {
-/*
-            faderLoader.opacity = 1
-*/
         }
 
         function focus() {
-/*
-            faderLoader.opacity = 1
-*/
         }
 
         function canceled() {
-/*
-            releasedEffect.restart()
-*/
         }
 
         states: [

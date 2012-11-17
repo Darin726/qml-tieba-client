@@ -16,17 +16,16 @@ CommonDialog {
     }
 
     function getEmoSrc(index){
-        var res = "";
         if (index < 1){
-            return "../emo/image_emoticon.png"
+            return "qrc:/emo/pics/image_emoticon.png"
         } else if (index < 50){
-            return "../emo/image_emoticon"+(index+1)+".png"
+            return "qrc:/emo/pics/image_emoticon"+(index+1)+".png"
         } else if (index < 70){
-            return "../emo/e_ali_0"+Emotion.ali_file[index-50] + ".png"
+            return "qrc:/emo/pics/ali_0"+Emotion.ali_file[index-50] + ".png"
         } else if (index < 90){
-            return "../emo/e_yz_"+paddingLeft(Emotion.yz_file[index-70], 3)+".png"
+            return "qrc:/emo/pics/yz_"+paddingLeft(Emotion.yz_file[index-70], 3)+".png"
         } else if (index < 110){
-            return "../emo/e_b"+paddingLeft(index-89,2)+".png"
+            return "qrc:/emo/pics/b"+paddingLeft(index-89,2)+".png"
         } else {
             return customEmo[index-110].thumbnail
         }
@@ -59,7 +58,8 @@ CommonDialog {
             onClicked: root.itemClicked(index)
             Image {
                 anchors.centerIn: parent
-                Component.onCompleted: source = root.getEmoSrc(index)
+                asynchronous: true;
+                source: root.getEmoSrc(index)
             }
             Rectangle {
                 anchors.fill: parent

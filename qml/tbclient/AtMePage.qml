@@ -98,9 +98,20 @@ Page {
                         anchors {
                             left: parent.left; top: parent.top; margins: platformStyle.paddingLarge
                         }
-                        sourceSize.height: platformStyle.graphicSizeMedium
-                        Component.onCompleted: if (tbsettings.showAvatar)
-                                                   source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait
+                        width: platformStyle.graphicSizeMedium; height: platformStyle.graphicSizeMedium
+                        sourceSize: Qt.size(width, height)
+                        Component.onCompleted: {
+                            if (tbsettings.showAvatar)
+                                source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait
+                            else
+                                source = "qrc:/gfx/photo.png"
+                        }
+                        Image {
+                            anchors.fill: parent
+                            sourceSize: Qt.size(width, height)
+                            source: visible ? "qrc:/gfx/photo.png" : ""
+                            visible: parent.status != Image.Ready
+                        }
                     }
                     Column {
                         id: delCol

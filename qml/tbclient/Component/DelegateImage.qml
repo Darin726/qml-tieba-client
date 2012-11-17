@@ -10,24 +10,39 @@ Item {
         anchors.fill: parent
         onClicked: {
             signalCenter.linkActivated("img:"+modelData[1])
-            try { placeHolder.opacity = 0.5 } catch(e){}
+            root.opacity = 0.6
         }
     }
+
     Image {
         id: placeHolder
-        sourceSize: Qt.size(platformStyle.graphicSizeMedium, platformStyle.graphicSizeMedium)
+        anchors.centerIn: parent
+        sourceSize: Qt.size(platformStyle.graphicSizeMedium,
+                            platformStyle.graphicSizeMedium)
         source: "qrc:/gfx/photos.svg"
     }
 
     Image {
-        sourceSize.width: 300
-        onStatusChanged: if (status == Image.Ready) {
-                             root.width = paintedWidth
-                             root.height = paintedHeight
-                             placeHolder.destroy()
-                         }
+        anchors.fill: parent;
+        sourceSize: Qt.size(width, height)
+        opacity: 0
+        Behavior on opacity {
+            NumberAnimation { duration: 200 }
+        }
+        onStatusChanged: {
+            if (status == Image.Ready){
+                placeHolder.visible = false;
+                opacity = 1;
+            }
+        }
         Component.onCompleted: {
             if (tbsettings.showImage){
+                var s = modelData[2].split(",")
+                if (s[0] <= 270){
+                    root.width = s[0]; root.height = s[1]
+                } else {
+                    root.width = 270; root.height = Math.floor(270/s[0]*s[1])
+                }
                 source = modelData[1]
             }
         }

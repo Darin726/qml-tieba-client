@@ -74,8 +74,8 @@ Item {
                 threadPage.loading = false
                 app.showMessage("回复成功")
                 app.multiThread(function(){
-                                    if (threadPage.isReverse && !threadPage.hasPrev) threadPage.loadPrev()
-                                    else if (!threadPage.isReverse && !threadPage.hasMore) threadPage.loadMore()
+                                    if (threadPage.isReverse && !threadPage.hasUpwards) threadPage.loadUpwards()
+                                    if (!threadPage.isReverse && !threadPage.hasDownwards) threadPage.loadDownwards()
                                     threadPage.state = ""
                                 })
             }

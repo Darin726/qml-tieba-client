@@ -2,7 +2,7 @@ folder_01.source = qml/tbclient
 folder_01.target = qml
 DEPLOYMENTFOLDERS = folder_01
 
-VERSION = 0.7.4
+VERSION = 0.7.6
 VERSTR = '\\"$${VERSION}\\"'
 DEFINES += VER=\"$${VERSTR}\"
 
@@ -11,7 +11,7 @@ MOBILITY += systeminfo
 QT += network webkit
 
 release {
-    DEFINES += QT_NO_DEBUG_OUTPUT
+#    DEFINES += QT_NO_DEBUG_OUTPUT
 }
 
 symbian {
@@ -44,6 +44,7 @@ SOURCES += main.cpp \
     httpuploader.cpp \
     downloadmanager.cpp \
     customwebview.cpp
+#    E:/обть/qdeclarativeimage/*.cpp
 
 HEADERS += \
     utility.h \
@@ -53,6 +54,7 @@ HEADERS += \
     httpuploader.h \
     downloadmanager.h \
     customwebview.h
+#    E:/обть/qdeclarativeimage/*.h
 
 RESOURCES += \
     picsource.qrc

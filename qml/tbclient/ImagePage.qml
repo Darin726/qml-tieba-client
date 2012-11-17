@@ -1,6 +1,7 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
+import "js/storage.js" as Database
 
 Page {
     id: root
@@ -35,18 +36,87 @@ Page {
             value: 100.0
         }
         ToolButton {
-            iconSource: "qrc:/gfx/download%1.svg".arg(platformInverted?"_inverted":"")
-            enabled: pic.status == Image.Ready
-            onClicked: {
-                var res = utility.savePixmap(imgUrl, tbsettings.imagePath)
-                if (res.length>0){
-                    app.showMessage("图片已保存至"+res)
-                } else {
-                    app.showMessage("保存失败> <")
+            iconSource: "toolbar-menu"
+            onClicked: menu.open()
+        }
+    }
+    Menu {
+        id: menu
+        content: MenuLayout {
+            MenuItem {
+                text: "保存图片"
+                enabled: pic.status == Image.Ready
+                onClicked: {
+                    var res = utility.savePixmap(imgUrl, tbsettings.imagePath)
+                    if (res.length>0){
+                        app.showMessage("图片已保存至"+res)
+                    } else {
+                        app.showMessage("保存失败> <")
+                    }
+                }
+            }
+            MenuItem {
+                text: "添加到表情"
+                enabled: pic.status == Image.Ready
+                onClicked: {
+                    var id = imgUrl.match(/http:\/\/imgsrc.baidu.com\/forum\/pic\/item\/(.*)\.jpg/)
+                    if (id){
+                        diag.picId = id[1];
+                        diag.open()
+                    } else {
+                        app.showMessage("> <此图片不支持直接添加")
+                    }
                 }
             }
         }
     }
+    CommonDialog {
+        id: diag
+        property string picId
+        titleText: "添加一个自定义表情"
+        buttonTexts: ["保存","取消"]
+        content: Item {
+            width: parent.width; height: platformStyle.graphicSizeLarge
+            TextField {
+                id: nameField
+                anchors {
+                    left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
+                    verticalCenter: parent.verticalCenter
+                }
+                placeholderText: "设定名称(可选)"
+            }
+        }
+
+        onButtonClicked: {
+            if (index == 0){
+                var list = Database.getCustomEmo()
+                var name = nameField.text || "MyEmo"
+                function check(name){
+                    for (var i in list){
+                        if (list[i].name == name)
+                            return true;
+                    }
+                    return false;
+                }
+                if (check(name)){
+                    var i = 1;
+                    while (check(name+"-"+i))
+                        i ++;
+                    name += "-"+i;
+                }
+                var img = utility.saveThumbnail(imgUrl, Qt.size(46, 46))
+                if (img.length>0){
+                    Database.addCustomEmo(name, img, "pic,"+diag.picId+","+pic.sourceSize.width+","+pic.sourceSize.height)
+                    app.showMessage("表情添加成功")
+                } else {
+                    app.showMessage("> <添加失败，请在表情管理页手动添加。")
+                }
+            }
+            diag.picId = ""
+            nameField.text = ""
+        }
+    }
+
     Flickable {
         id: flic
         anchors.fill: parent

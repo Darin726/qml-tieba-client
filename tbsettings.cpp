@@ -47,10 +47,11 @@ void TBSettings::loadSettings()
         m_remindAtMe = m_settings->value("remindAtMe", true).toBool();
         m_signText = m_settings->value("signText", "").toString();
 //        m_imageQuality = m_settings->value("imageQuality", 1).toInt();
+        m_showAbstract = m_settings->value("showAbstract", false).toBool();
 
         m_appVersion = qApp->applicationVersion().replace("\"","");
         m_host = "http://c.tieba.baidu.com";
-        m_clientVersion = "2.1.0";
+        m_clientVersion = "2.5.0";
         m_from = "tieba";
         m_netType = "1";
 
@@ -82,6 +83,7 @@ void TBSettings::saveSettings()
         m_settings->setValue("remindReplyToMe", m_remindReplyToMe);
         m_settings->setValue("remindAtMe", m_remindAtMe);
         m_settings->setValue("signText", m_signText);
+        m_settings->setValue("showAbstract", m_showAbstract);
 //        m_settings->setValue("imageQuality", m_imageQuality);
     }
 }
@@ -289,6 +291,19 @@ void TBSettings::setSignText(const QString &signText)
         emit signTextChanged();
     }
 }
+
+bool TBSettings::showAbstract() const
+{
+    return m_showAbstract;
+}
+void TBSettings::setShowAbstract(const bool &showAbstract)
+{
+    if (m_showAbstract != showAbstract){
+        m_showAbstract = showAbstract;
+        emit showAbstractChanged();
+    }
+}
+
 /*
 int TBSettings::imageQuality() const
 {

@@ -1,5 +1,4 @@
 #include "downloadmanager.h"
-#include <QDebug>
 #include <QTimer>
 #include <QFileInfo>
 #include <QDir>

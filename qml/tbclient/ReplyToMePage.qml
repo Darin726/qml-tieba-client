@@ -114,10 +114,23 @@ Page {
                             spacing: platformStyle.paddingMedium
                             width: parent.width
                             Image {
-                                visible: source != ""
-                                sourceSize.height: platformStyle.graphicSizeMedium
-                                Component.onCompleted: if (tbsettings.showAvatar)
-                                                           source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait
+                                width: platformStyle.graphicSizeMedium; height: platformStyle.graphicSizeMedium
+                                sourceSize: Qt.size(width, height)
+                                asynchronous: true;
+                                Component.onCompleted: {
+                                    if (tbsettings.showAvatar){
+                                        source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait
+                                    } else {
+                                        source = "qrc:/gfx/photo.png"
+                                    }
+                                }
+                                Image {
+                                    anchors.fill: parent
+                                    sourceSize: Qt.size(width, height)
+                                    visible: parent.status != Image.Ready
+                                    asynchronous: true;
+                                    source: visible ? "qrc:/gfx/photo.png" : ""
+                                }
                             }
                             ListItemText {
                                 role: "SubTitle"
@@ -137,6 +150,7 @@ Page {
                             width: parent.width
                             height: contStr.height + platformStyle.paddingLarge*2
                             source: "qrc:/gfx/popup.9.png"
+                            asynchronous: true;
                             border {
                                 left: 30; right: 17
                                 top: 15; bottom: 7

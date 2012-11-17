@@ -1,14 +1,8 @@
 #include <QtGui/QApplication>
-#include "qmlapplicationviewer.h"
-
-#ifdef Q_OS_SYMBIAN
-#include <QSymbianEvent>
-#include <w32std.h>
-#include <avkon.hrh>
-#endif
-
 #include <QSplashScreen>
 #include <QtDeclarative>
+#include "qmlapplicationviewer.h"
+
 #include "downloadmanager.h"
 #include "httpuploader.h"
 #include "scribblearea.h"
@@ -16,6 +10,12 @@
 #include "utility.h"
 #include "tbnetworkaccessmanagerfactory.h"
 #include "customwebview.h"
+
+#ifdef Q_OS_SYMBIAN
+#include <QSymbianEvent>
+#include <w32std.h>
+#include <avkon.hrh>
+#endif
 
 class MyApplication : public QApplication
 {
@@ -65,11 +65,10 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     viewer.viewport()->setAttribute(Qt::WA_NoSystemBackground);
     viewer.viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
-    TBSettings settings;
-    Utility utility;
-    utility.setEngine(viewer.engine());
+    TBSettings settings;    
     TBNetworkAccessManagerFactory factory;
     DownloadManager manager;
+    Utility utility(viewer.engine());
 
     viewer.engine()->setNetworkAccessManagerFactory(&factory);
     viewer.rootContext()->setContextProperty("utility", &utility);

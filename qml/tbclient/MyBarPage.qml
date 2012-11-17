@@ -90,6 +90,7 @@ MyPage {
 
     Loader {
         id: loader
+        focus: true
         anchors { fill: parent; topMargin: viewHeader.height }
     }
     Component {
@@ -100,7 +101,7 @@ MyPage {
             cacheBuffer: height
             focus: true
             model: searchInput.text == "" ? myBarModel : suggestModel
-            Component.onCompleted: forceActiveFocus()
+            highlightMoveDuration: 400
             header: PullToActivate {
                 myView: view
                 onRefresh: Script.getMyBarList(myBarModel)

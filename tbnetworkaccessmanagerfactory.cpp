@@ -28,7 +28,9 @@ QNetworkReply *TBNetworkManager::createRequest(Operation op,
                                                    const QNetworkRequest &request,
                                                    QIODevice *outgoingData)
 {
-    QNetworkReply *reply = QNetworkAccessManager::createRequest(op, request, outgoingData);
+    QNetworkRequest req(request);
+    req.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
+    QNetworkReply *reply = QNetworkAccessManager::createRequest(op, req, outgoingData);
     return reply;
 }
 
@@ -45,7 +47,7 @@ QNetworkAccessManager* TBNetworkAccessManagerFactory::create(QObject *parent)
 
     QString dataPath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
     diskCache->setCacheDirectory(dataPath);
-    diskCache->setMaximumCacheSize(2*1024*1024);
+    diskCache->setMaximumCacheSize(3*1024*1024);
     manager->setCache(diskCache);
     return manager;
 }

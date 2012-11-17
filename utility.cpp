@@ -1,11 +1,9 @@
 #include "utility.h"
-#include <QDebug>
 #include <QTextCodec>
 #include <QDir>
 #include <QTextStream>
 #include <QNetworkDiskCache>
 #include <QNetworkAccessManager>
-#include <QImage>
 #include <QCoreApplication>
 
 #ifdef Q_OS_SYMBIAN
@@ -15,25 +13,14 @@
 #include <mgfetch.h>
 #endif
 
-Utility::Utility(QObject *parent) :
+Utility::Utility(QDeclarativeEngine *engine, QObject *parent) :
     QObject(parent)
 {
+    this->m_engine = engine;
 }
 
 Utility::~Utility()
 {
-}
-
-void Utility::startApp(const QString &program)
-{
-    QProcess *process = new QProcess(this);
-    connect(process, SIGNAL(error(QProcess::ProcessError)), this, SLOT(error(QProcess::ProcessError)));
-    process->start(program);
-}
-
-void Utility::error(QProcess::ProcessError error)
-{
-    emit processError(static_cast<int>(error));
 }
 
 QString Utility::decodeGBKHex(const QByteArray &hexdata)
@@ -45,6 +32,7 @@ void Utility::launchPlayer(const QString &url)
 {
     qDebug() << "launch player" << url;
     QString videoFilePath = QDir::tempPath() + "/video.ram";
+    qDebug() << videoFilePath;
     QFile file(videoFilePath);
     if (file.exists()) file.remove();
     if (file.open(QIODevice::ReadWrite | QIODevice::Text)){
@@ -169,16 +157,17 @@ QString Utility::savePixmap(QString url, QString path)
     return "";
 }
 
-void Utility::setEngine(QDeclarativeEngine *engine)
-{
-    m_engine = engine;
-}
-
 void Utility::clearNetworkCache()
 {
     qDebug() << "clearing cache";
     QNetworkDiskCache *diskCache = dynamic_cast<QNetworkDiskCache *>(m_engine->networkAccessManager()->cache());
     diskCache->clear();
+}
+
+int Utility::cacheSize()
+{
+    QNetworkDiskCache *diskCache = dynamic_cast<QNetworkDiskCache *>(m_engine->networkAccessManager()->cache());
+    return diskCache->cacheSize();
 }
 
 void Utility::setCache(const QString &type, const QString &cache)
@@ -253,10 +242,8 @@ QString Utility::resizeImage(const QString &url, const QSize &toSize)
     QImage image(url);
     if (!image.isNull()){
         QString path = qApp->applicationDirPath() + "/.thumbnail";
-
-        bool ok = true;
         QDir dir(path);
-        if (!dir.exists()) ok = dir.mkpath(path);
+        if (!dir.exists()) dir.mkpath(path);
 
         QString basename = QFileInfo(url).baseName() + QString("_%1_%2").arg(QString::number(toSize.width()), QString::number(toSize.height()));
         if (QFile::exists(path + "/" + basename + ".png")){
@@ -268,13 +255,37 @@ QString Utility::resizeImage(const QString &url, const QSize &toSize)
         QString res = path + "/" + basename + ".png";
 
         QImage resImg = image.scaled(toSize);
-        if (!resImg.isNull())
-            ok = ok && resImg.save(res, "PNG");
-
-        if (ok)
+        if (!resImg.isNull() && resImg.save(res, "PNG"))
             return res;
-        else
-            return "";
     }
     return "";
 }
+
+QString Utility::saveThumbnail(const QString &url, const QSize &toSize)
+{
+    QNetworkDiskCache *diskCache = dynamic_cast<QNetworkDiskCache *>(m_engine->networkAccessManager()->cache());
+    QIODevice * pData = diskCache->data(url);
+    if (pData != 0){
+        QString path = qApp->applicationDirPath() + "/.thumbnail";
+        QDir dir(path);
+        if (!dir.exists()) dir.mkpath(path);
+
+        QString basename = QFileInfo(url).baseName() + QString("_%1_%2").arg(QString::number(toSize.width()), QString::number(toSize.height()));
+        if (QFile::exists(path + "/" + basename + ".png")){
+            int i = 1;
+            while (QFile::exists(path + "/" + basename + QString::number(i) + ".png"))
+                i ++;
+            basename += QString::number(i);
+        }
+        QString res = path + "/" + basename + ".png";
+
+        QImage image;
+        image.load(pData, 0);
+        QImage resImg = image.scaled(toSize);
+        delete(pData);
+        if (!resImg.isNull() && resImg.save(res, "PNG"))
+            return res;
+    }
+    return "";
+}
+
