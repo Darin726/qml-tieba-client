@@ -1,40 +1,61 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
-import "js/storage.js" as Database
 import "Component"
+import "../js/storage.js" as Database
 
 MyPage {
-    id: page
+    id: page;
 
-    title: "表情管理"
+    title: qsTr("Emoticon Manager");
 
     tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"; onClicked: pageStack.pop()
+        ToolButtonWithTip {
+            toolTipText: qsTr("Back");
+            iconSource: "toolbar-back";
+            onClicked: pageStack.pop();
+        }
+        ToolButtonWithTip {
+            toolTipText: qsTr("Add");
+            iconSource: "toolbar-add";
+            enabled: uploader.caller != page.toString()||uploader.uploadState==0;
+            onClicked: internal.openDialog();
         }
     }
 
     onStatusChanged: {
         if (status == PageStatus.Active){
-            internal.loadEmoList()
+            internal.loadEmoList();
+        }
+    }
+
+    Connections {
+        target: signalCenter;
+        onUploadFinished: {
+            if (caller == page.toString()){
+                internal.uploadFinished(info);
+            }
         }
     }
 
     QtObject {
-        id: internal
-        property variant customEmoList: []
-        property string selectedImage
-        property string selectedName
+        id: internal;
+        property variant customEmoList: [];
+        property string selectedImage: "";
+        property string selectedName: "";
+        property QtObject emoDialog: null;
+
         function loadEmoList(){
-            customEmoList = Database.getCustomEmo()
+            customEmoList = Database.getCustomEmo();
         }
+
         function startUpload(){
-            if (selectedImage != ""){
-                signalCenter.postImage(page.toString(), selectedImage)
+            if (selectedImage.length > 0){
+                signalCenter.postImage(page.toString(), selectedImage);
             }
         }
+
         function uploadFinished(imageinfo){
-            var name = selectedName || "MyEmo"
+            var name = selectedName||"MyEmo";
             if (checkNameExists(name)){
                 var i = 1;
                 while (checkNameExists(name+"-"+i))
@@ -42,168 +63,168 @@ MyPage {
                 name += "-"+i;
             }
             Database.addCustomEmo(name,
-                                  utility.resizeImage(selectedImage,Qt.size(46, 46))||selectedImage,
-                                  "pic,"+imageinfo.pic_id+","+imageinfo.width+","+imageinfo.height)
-            loadEmoList()
+                                  utility.createThumbnail(selectedImage, Qt.size(46, 46))||selectedImage,
+                                  "pic,"+imageinfo.pic_id+","+imageinfo.width+","+imageinfo.height);
+            loadEmoList();
         }
+
         function removeEmo(name, url){
-            Database.deleteCustomEmo(name)
-            loadEmoList()
-            utility.removeFile(url)
+            Database.deleteCustomEmo(name);
+            loadEmoList();
+            utility.removeFile(url);
         }
+
         function checkNameExists(name){
-            for (var i in customEmoList){
-                if (customEmoList[i].name == name)
-                    return true;
-            }
-            return false;
+            return customEmoList.some(function(value){return value.name == name});
+        }
+
+        function openDialog(){
+            if (!emoDialog){ emoDialog = diagComp.createObject(page); }
+            emoDialog.open();
         }
     }
 
-    Connections {
-        target: signalCenter
-        onUploadFinished: {
-            if (caller == page.toString()){
-                internal.uploadFinished(info)
-            }
-        }
-    }
-
-    CommonDialog {
-        id: addEmoDialog
-        titleText: "添加一个自定义表情"
-        buttonTexts: ["上传","取消"]
-        content: Column {
-            width: parent.width
-            spacing: platformStyle.paddingSmall;
-            MenuItem {
-                id: imgSrc
-                ListItemText {
-                    role: "SubTitle"
-                    text: "选择图片"
-                    anchors {
-                        left: parent.left; leftMargin: imgSrc.platformLeftMargin;
-                        verticalCenter: parent.verticalCenter
+    Component {
+        id: diagComp;
+        CommonDialog {
+            id: emoDialog;
+            titleText: qsTr("Add a custom emoticon");
+            buttonTexts: [qsTr("Upload"), qsTr("Cancel")];
+            content: Item {
+                width: emoDialog.platformContentMaximumWidth;
+                height: Math.min(emoDialog.platformContentMaximumHeight, dialogCol.height);
+                Flickable {
+                    anchors.fill: parent;
+                    clip: true;
+                    contentWidth: parent.width;
+                    contentHeight: dialogCol.height;
+                    Column {
+                        id: dialogCol;
+                        anchors { left: parent.left; right: parent.right; }
+                        spacing: platformStyle.paddingSmall;
+                        SelectionListItem {
+                            id: imgSrc;
+                            width: parent.width;
+                            title: qsTr("Select image");
+                            onClicked: subTitle = utility.selectImage()||subTitle;
+                        }
+                        TextField {
+                            id: nameField;
+                            placeholderText: qsTr("Set name (optional)");
+                            anchors { left: parent.left; right: parent.right; margins: platformStyle.paddingLarge; }
+                        }
                     }
-                    visible: imgSrc.text == ""
                 }
-                onClicked: imgSrc.text = utility.choosePhoto() || imgSrc.text
             }
-            TextField {
-                id: nameField
-                placeholderText: "设定名称"
-                anchors {
-                    left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
+            onStatusChanged: {
+                if (status == DialogStatus.Open){
+                    imgSrc.subTitle = "";
+                    nameField.text = "";
+                }
+            }
+            onButtonClicked: {
+                if (index == 0){
+                    internal.selectedImage = imgSrc.subTitle;
+                    internal.selectedName = nameField.text;
+                    internal.startUpload();
                 }
             }
         }
-        onButtonClicked: {
-            if (index == 0){
-                internal.selectedImage = imgSrc.text;
-                internal.selectedName = nameField.text;
-                internal.startUpload()
-            }
-        }
+    }
+
+    ViewHeader {
+        id: viewHeader;
+        headerIcon: "gfx/btn_insert_face_res.png";
+        headerText: qsTr("%1 records in all").arg(internal.customEmoList.length)
+        loading: uploader.caller == page.toString() && uploader.uploadState == 2;
     }
 
     ListView {
-        id: view
-        anchors.fill: parent
-        model: internal.customEmoList
-        header: ListHeading {
-            platformInverted: tbsettings.whiteTheme
-            ListItemText {
-                anchors.fill: parent.paddingItem; role: "Heading";
-                text: "共%1条记录".arg(internal.customEmoList.length)
-                platformInverted: tbsettings.whiteTheme
-            }
-        }
-        delegate: ListItem {
-            id: listItem
-            platformInverted: tbsettings.whiteTheme
-            Image {
-                id: thumbnail
-                anchors {
-                    left: listItem.paddingItem.left; top: listItem.paddingItem.top;
-                    bottom: listItem.paddingItem.bottom
+        id: view;
+        anchors { left: parent.left; right: parent.right; top: viewHeader.bottom; bottom: uploadIndicator.top; }
+        model: internal.customEmoList;
+        delegate: deleComp;
+        Component {
+            id: deleComp;
+            ListItem {
+                id: root;
+                platformInverted: tbsettings.whiteTheme;
+                Image {
+                    id: thumbnail;
+                    anchors { left: root.paddingItem.left; top: root.paddingItem.top; bottom: root.paddingItem.bottom; }
+                    asynchronous: true;
+                    cache: false;
+                    width: height;
+                    source: modelData.thumbnail;
                 }
-                asynchronous: true;
-                cache: false;
-                width: height;
-                source: modelData.thumbnail
-            }
-            Button {
-                id: removeButton
-                anchors {
-                    right: listItem.paddingItem.right; verticalCenter: parent.verticalCenter
+                Button {
+                    id: removeButton;
+                    anchors { right: root.paddingItem.right; verticalCenter: parent.verticalCenter; }
+                    platformInverted: root.platformInverted;
+                    iconSource: privateStyle.toolBarIconPath("toolbar-delete", platformInverted);
+                    onClicked: internal.removeEmo(modelData.name, modelData.thumbnail);
                 }
-                platformInverted: tbsettings.whiteTheme
-                iconSource: privateStyle.toolBarIconPath("toolbar-delete", platformInverted)
-                onClicked: internal.removeEmo(modelData.name, modelData.thumbnail)
-            }
-            ListItemText {
-                anchors {
-                    left: thumbnail.right; right: removeButton.left; margins: platformStyle.paddingMedium
-                    verticalCenter: parent.verticalCenter
-                }
-                platformInverted: tbsettings.whiteTheme
-                text: modelData.name
-            }
-        }
-        footer: ListItem {
-            property int index: -1
-            platformInverted: tbsettings.whiteTheme
-            onClicked: {
-                if (state == "uploading"){
-                    Qt.createComponent("Dialog/AbortUploadDialog.qml").createObject(page).open()
-                } else {
-                    imgSrc.text = "";
-                    nameField = "";
-                    addEmoDialog.open()
-                }
-            }
-            states: [
-                State {
-                    name: "uploading"
-                    when: uploader.currentCaller == page.toString() && uploader.uploadState == 2
-                    PropertyChanges { target: footerThumb; visible: true; source: internal.selectedImage }
-                    PropertyChanges { target: footerCol; visible: true;}
-                    PropertyChanges { target: addImage; visible: false; }
-                    PropertyChanges { target: progressBar; value: uploader.progress; }
-                }
-            ]
-            Image {
-                id: addImage
-                anchors.centerIn: parent
-                source: privateStyle.toolBarIconPath("toolbar-add", tbsettings.whiteTheme)
-            }
-            Image {
-                id: footerThumb
-                anchors {
-                    left: parent.paddingItem.left; top: parent.paddingItem.top; bottom: parent.paddingItem.bottom;
-                }
-                visible: false;
-                width: height;
-            }
-            Column {
-                id: footerCol
-                visible: false;
-                anchors {
-                    left: footerThumb.right; leftMargin: platformStyle.paddingMedium;
-                    right: parent.paddingItem.right; top: parent.paddingItem.top;
-                }
-                spacing: platformStyle.paddingSmall;
                 ListItemText {
-                    width: parent.width;
-                    platformInverted: tbsettings.whiteTheme;
-                    text: internal.selectedName;
-                }
-                ProgressBar {
-                    id: progressBar
-                    width: parent.width;
-                    platformInverted: tbsettings.whiteTheme;
+                    anchors {
+                        left: thumbnail.right; right: removeButton.left;
+                        margins: platformStyle.paddingMedium;
+                        verticalCenter: parent.verticalCenter;
+                    }
+                    platformInverted: root.platformInverted;
+                    text: modelData.name;
                 }
             }
+        }
+    }
+
+    ListItem {
+        id: uploadIndicator;
+        enabled: false;
+        platformInverted: tbsettings.whiteTheme;
+        anchors { left: parent.left; right: parent.right; top: parent.bottom; }
+        opacity: 0;
+        Image {
+            id: thumbnail;
+            anchors {
+                left: uploadIndicator.paddingItem.left;
+                top: uploadIndicator.paddingItem.top;
+                bottom: uploadIndicator.paddingItem.bottom;
+            }
+            width: height;
+            sourceSize.height: height;
+            source: internal.selectedImage;
+        }
+        Column {
+            anchors {
+                left: thumbnail.right; leftMargin: platformStyle.paddingMedium;
+                right: uploadIndicator.paddingItem.right;
+                top: uploadIndicator.paddingItem.top;
+            }
+            spacing: platformStyle.paddingSmall;
+            ListItemText {
+                width: parent.width;
+                platformInverted: uploadIndicator.platformInverted;
+                text: internal.selectedImage;
+            }
+            ProgressBar {
+                id: progressBar;
+                width: parent.width;
+                platformInverted: uploadIndicator.platformInverted;
+                value: viewHeader.loading ? uploader.progress : 0;
+            }
+        }
+        states: [
+            State {
+                name: "uploading";
+                AnchorChanges { target: uploadIndicator; anchors.top: undefined; anchors.bottom: page.bottom; }
+                PropertyChanges { target: uploadIndicator; opacity: 1; }
+                PropertyChanges { target: progressBar; value: uploader.progress; }
+                when: uploader.caller == page.toString() && uploader.uploadState == 2;
+            }
+        ]
+        transitions: Transition {
+            AnchorAnimation { duration: 200; }
+            PropertyAnimation { property: "opacity"; duration: 200; }
         }
     }
 }

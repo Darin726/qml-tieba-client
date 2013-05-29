@@ -3,305 +3,188 @@ import com.nokia.symbian 1.1
 import "Component"
 
 MyPage {
-    id: settingPage
+    id: page;
+
+    title: qsTr("Settings");
+
     tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"; onClicked: pageStack.pop()
+        ToolButtonWithTip {
+            toolTipText: qsTr("Back");
+            iconSource: "toolbar-back";
+            onClicked: pageStack.pop();
         }
     }
-    title: "设置中心"
-    onStatusChanged: {
-        if (status == PageStatus.Active && !contentLoader.sourceComponent){
-            contentLoader.sourceComponent = contentComp
-        } else if (status == PageStatus.Deactivating){
-            contentLoader.sourceComponent = undefined
-        }
+
+    ViewHeader {
+        id: viewHeader;
+        enabled: false;
+        headerIcon: privateStyle.toolBarIconPath("toolbar-settings");
+        headerText: qsTr("Settings Center");
     }
+
     Flickable {
-        id: flick
-        anchors {
-            fill: parent; leftMargin: platformStyle.paddingMedium; rightMargin: platformStyle.paddingMedium
-        }
-        contentWidth: width
-        contentHeight: contentLoader.height
-        Loader {
-            id: contentLoader
-            width: parent.width
-        }
-    }
-    Component {
-        id: contentComp
+        id: flickable;
+        anchors { fill: parent; topMargin: viewHeader.height; }
+        contentWidth: parent.width;
+        contentHeight: contentCol.height + platformStyle.paddingLarge*2;
+
         Column {
-            id: contentCol
-            width: parent ? parent.width : screen.width;
-            MenuItem {
-                width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
-                platformInverted: tbsettings.whiteTheme
-                ListItemText {
-                    anchors.centerIn: parent
-                    text: "关于此程序"
-                    platformInverted: tbsettings.whiteTheme
-                }
-                onClicked: Qt.createComponent("Dialog/AboutAppDialog.qml").createObject(settingPage).open()
+            id: contentCol;
+            anchors {
+                left: parent.left; top: parent.top; right: parent.right;
+                topMargin: platformStyle.paddingLarge;
             }
-            SectionLabel { label: "功能" }
-
-            ButtonRow {
-                exclusive: false; onVisibleChanged: checkedButton = null
-                width: parent.width
-                Button {
-                    platformInverted: tbsettings.whiteTheme
-                    iconSource: platformInverted ? "qrc:/gfx/switch_windows_inverted.svg"
-                                                 : "qrc:/gfx/switch_windows.svg"
-                    onClicked: pageStack.push(threadGroupPage)
+            Column {
+                anchors { left: parent.left; leftMargin: platformStyle.paddingLarge; }
+                spacing: platformStyle.paddingLarge;
+                CheckBox {
+                    text: qsTr("Show Avatar");
+                    platformInverted: tbsettings.whiteTheme;
+                    checked: tbsettings.showAvatar;
+                    onClicked: tbsettings.showAvatar = checked;
                 }
-                Button {
-                    platformInverted: tbsettings.whiteTheme
-                    iconSource: platformInverted ? "qrc:/gfx/bookmark_inverted.svg"
-                                                 : "qrc:/gfx/bookmark.svg"
-                    onClicked: pageStack.push(Qt.resolvedUrl("BookMarkPage.qml"))
+                CheckBox {
+                    text: qsTr("Show Image");
+                    platformInverted: tbsettings.whiteTheme;
+                    checked: tbsettings.showImage;
+                    onClicked: tbsettings.showImage = checked;
                 }
-                Button {
-                    platformInverted: tbsettings.whiteTheme
-                    iconSource: platformInverted ? "qrc:/gfx/sign_in_inverted.svg"
-                                                 : "qrc:/gfx/sign_in.svg"
-                    onClicked: pageStack.push(Qt.resolvedUrl("AccountPage.qml"))
+                CheckBox {
+                    text: qsTr("Show Abstract");
+                    platformInverted: tbsettings.whiteTheme;
+                    checked: tbsettings.showAbstract;
+                    onClicked: tbsettings.showAbstract = checked;
                 }
-            }
-
-            SectionLabel { label: "外观" }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "主题风格:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                width: parent.width
-                exclusive: false
-                Button {
-                    text: "亮"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.whiteTheme; onClicked: tbsettings.whiteTheme = true
+                CheckBox {
+                    text: qsTr("Night Theme");
+                    platformInverted: tbsettings.whiteTheme;
+                    checked: !tbsettings.whiteTheme;
+                    onClicked: tbsettings.whiteTheme = !checked;
                 }
-                Button {
-                    text: "暗"; platformInverted: tbsettings.whiteTheme; checked: !tbsettings.whiteTheme; onClicked: tbsettings.whiteTheme = false
+                CheckBox {
+                    text: qsTr("Share Location");
+                    platformInverted: tbsettings.whiteTheme;
+                    checked: tbsettings.shareLocation;
+                    onClicked: tbsettings.shareLocation = checked;
                 }
             }
             Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "背景图片<a href=\"j\">(恢复默认)</a>:"
-                platformInverted: tbsettings.whiteTheme
-                onLinkActivated: tbsettings.backgroundImage = ""
-            }
-            Button {
-                width: parent.width; platformInverted: tbsettings.whiteTheme
-                text: tbsettings.backgroundImage==""?"未定义":tbsettings.backgroundImage
-                onClicked: tbsettings.backgroundImage = utility.choosePhoto()||tbsettings.backgroundImage
-            }
-            SectionLabel { label: "内容" }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "摘要模式:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                width: parent.width
-                exclusive: false
-                Button {
-                    text: "开"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.showAbstract; onClicked: tbsettings.showAbstract = true
-                }
-                Button {
-                    text: "关"; platformInverted: tbsettings.whiteTheme; checked: !tbsettings.showAbstract; onClicked: tbsettings.showAbstract = false
-                }
-            }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "图片显示:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                exclusive: false; width: parent.width
-                Button {
-                    platformInverted: tbsettings.whiteTheme; text: "正文"; checked: tbsettings.showImage
-                    onClicked: tbsettings.showImage = !tbsettings.showImage
-                }
-                Button {
-                    platformInverted: tbsettings.whiteTheme; text: "头像"; checked: tbsettings.showAvatar
-                    onClicked: tbsettings.showAvatar = !tbsettings.showAvatar
-                }
-            }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "正文字号:"
-                platformInverted: tbsettings.whiteTheme
+                anchors { left: parent.left; leftMargin: platformStyle.paddingLarge; }
+                height: platformStyle.graphicSizeSmall;
+                text: qsTr("Font Size");
+                platformInverted: tbsettings.whiteTheme;
+                verticalAlignment: Text.AlignBottom;
             }
             Slider {
-                platformInverted: tbsettings.whiteTheme
-                width: parent.width;
-                minimumValue: platformStyle.fontSizeSmall; maximumValue: platformStyle.fontSizeSmall*2
-                stepSize: 1; value: tbsettings.fontSize
-                onPressedChanged: if (!pressed) tbsettings.fontSize = value
-                valueIndicatorVisible: true
-            }
-            SectionLabel { label: "提醒" }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "提醒频率:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            Slider {
-                platformInverted: tbsettings.whiteTheme
-                width: parent.width;
-                minimumValue: 0; maximumValue: 3; stepSize: 1;
-                value: {
-                    switch (tbsettings.remindFrequency){
-                    case 30000: return 3
-                    case 120000: return 2
-                    case 300000: return 1
-                    default: return 0
+                minimumValue: platformStyle.fontSizeSmall;
+                maximumValue: platformStyle.fontSizeSmall*2;
+                value: tbsettings.fontSize;
+                platformInverted: tbsettings.whiteTheme;
+                anchors { left: parent.left; right: parent.right; margins: platformStyle.paddingLarge; }
+                stepSize: 1;
+                valueIndicatorVisible: true;
+                onPressedChanged: {
+                    if (!pressed){
+                        tbsettings.fontSize = value;
                     }
                 }
-                valueIndicatorVisible: true
-                valueIndicatorText: {
-                    switch (value){
-                    case 0: return "关闭"
-                    case 1: return "5分钟"
-                    case 2: return "2分钟"
-                    case 3: return "半分钟"
-                    }
-                }
-                onPressedChanged: if (!pressed){
-                                      switch (value){
-                                      case 1: tbsettings.remindFrequency = 300000; break;
-                                      case 2: tbsettings.remindFrequency = 120000; break;
-                                      case 3: tbsettings.remindFrequency = 30000; break;
-                                      default: tbsettings.remindFrequency = 0; break;
-                                      }
-                                  }
             }
             Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "提醒内容:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                exclusive: false; width: parent.width
-                Button {
-                    text: "回复"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.remindReplyToMe
-                    onClicked: tbsettings.remindReplyToMe = !tbsettings.remindReplyToMe
-                }
-                Button {
-                    text: "提及"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.remindAtMe;
-                    onClicked: tbsettings.remindAtMe = !tbsettings.remindAtMe
-                }
-                Button {
-                    text: "粉丝"; platformInverted: tbsettings.whiteTheme; checked: tbsettings.remindNewFans
-                    onClicked: tbsettings.remindNewFans = !tbsettings.remindNewFans
-                }
-            }
-            SectionLabel { label: "高级" }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "图片打开方式:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                exclusive: false; width: parent.width
-                Button {
-                    platformInverted: tbsettings.whiteTheme; text: "系统"; checked: tbsettings.openWithSystem
-                    onClicked: tbsettings.openWithSystem = true
-                }
-                Button {
-                    platformInverted: tbsettings.whiteTheme; text: "软件"; checked: !tbsettings.openWithSystem
-                    onClicked: tbsettings.openWithSystem = false
-                }
-            }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "图片保存地址<a href=\"h\">(恢复默认)</a>:"
-                platformInverted: tbsettings.whiteTheme
-                onLinkActivated: tbsettings.resetImagePath()
-            }
-            Button {
-                width: parent.width; platformInverted: tbsettings.whiteTheme
-                text: tbsettings.imagePath
-                onClicked: {
-                    Qt.createComponent("Dialog/FolderSelector.qml").createObject(settingPage).open()
-                }
-            }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "最大标签数量:"
-                platformInverted: tbsettings.whiteTheme
+                anchors { left: parent.left; leftMargin: platformStyle.paddingLarge; }
+                height: platformStyle.graphicSizeSmall;
+                text: qsTr("Max Thread Count");
+                platformInverted: tbsettings.whiteTheme;
+                verticalAlignment: Text.AlignBottom;
             }
             Slider {
-                platformInverted: tbsettings.whiteTheme; width: parent.width
-                minimumValue: 0; maximumValue: 10; stepSize: 1
-                value: tbsettings.maxThreadCount
-                onPressedChanged: if (!pressed) tbsettings.maxThreadCount = value
-                valueIndicatorVisible: true
-                valueIndicatorText: value || "不限制"
-            }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "发帖后缀:"
-                platformInverted: tbsettings.whiteTheme
-            }
-            ButtonRow {
-                exclusive: false; width: parent.width
-                Button {
-                    text: "iPhone"; checked: tbsettings.clientType == 1; platformInverted: tbsettings.whiteTheme
-                    onClicked: tbsettings.clientType = 1
-                }
-                Button {
-                    text: "Android"; checked: tbsettings.clientType == 2; platformInverted: tbsettings.whiteTheme
-                    onClicked: tbsettings.clientType = 2
-                }
-                Button {
-                    text: screen.width > screen.height ? "WindowsPhone" : "WP"
-                    checked: tbsettings.clientType == 3; platformInverted: tbsettings.whiteTheme
-                    onClicked: tbsettings.clientType = 3
+                minimumValue: 1;
+                maximumValue: 10;
+                value: tbsettings.maxThreadCount;
+                platformInverted: tbsettings.whiteTheme;
+                anchors { left: parent.left; right: parent.right; margins: platformStyle.paddingLarge; }
+                stepSize: 1;
+                valueIndicatorVisible: true;
+                onPressedChanged: {
+                    if (!pressed){
+                        tbsettings.maxThreadCount = value;
+                    }
                 }
             }
-            Label {
-                height: platformStyle.graphicSizeMedium
-                verticalAlignment: Text.AlignVCenter
-                text: "文字签名:"
-                platformInverted: tbsettings.whiteTheme
+            Rectangle {
+                width: parent.width; height: 1;
+                color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
+                                             : platformStyle.colorDisabledMid;
             }
-            Button {
-                width: parent.width; platformInverted: tbsettings.whiteTheme
-                text: tbsettings.signText.replace(/(^\s*)|(\s*$)/g,"").replace(/\s/g," ") || "未设定"
+            SelectionListItem {
+                title: qsTr("Background Image(Long Press To Clear)");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: tbsettings.backgroundImage||qsTr("Default");
                 onClicked: {
-                    Qt.createComponent("Dialog/SetSignDialog.qml").createObject(settingPage).open()
+                    tbsettings.backgroundImage = utility.selectImage() || tbsettings.backgroundImage;
+                }
+                onPressAndHold: {
+                    tbsettings.backgroundImage = "";
                 }
             }
-            MenuItem {
-                width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
-                platformInverted: tbsettings.whiteTheme
-                platformSubItemIndicator: true;
-                text: "自定义表情"
-                onClicked: pageStack.push(Qt.resolvedUrl("CustomEmoPage.qml"))
-            }
-            MenuItem {
-                width: screen.width; anchors.horizontalCenter: parent.horizontalCenter
-                platformInverted: tbsettings.whiteTheme
-                text: "清空网络缓存 (当前:"+Math.round(utility.cacheSize()/1024)+"kb)"
+            SelectionListItem {
+                title: qsTr("Remind Settings");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: tbsettings.remindFrequency + qsTr("Minutes");
+                property Component dialog: null;
                 onClicked: {
-                    utility.clearNetworkCache()
-                    text = "清空网络缓存 (当前:"+Math.round(utility.cacheSize()/1024)+"kb)"
-                    app.showMessage("缓存已清空")
+                    if (!dialog) { dialog = Qt.createComponent("Dialog/RemindSettingDialog.qml"); }
+                    dialog.createObject(page);
+                }
+            }
+            SelectionListItem {
+                title: qsTr("Image Save Path");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: tbsettings.savePath;
+                onClicked: {
+                    tbsettings.savePath = utility.selectFolder()||tbsettings.savePath;
+                }
+            }
+            SelectionListItem {
+                title: qsTr("Post Tail");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: tbsettings.clientType == 3 ? "WindowsPhone" : tbsettings.clientType == 2 ? "Android" : "iPhone";
+                property Component dialog: null;
+                onClicked: {
+                    if (!dialog){ dialog = Qt.createComponent("Dialog/SetClientTypeDialog.qml"); }
+                    dialog.createObject(page);
+                }
+            }
+            SelectionListItem {
+                title: qsTr("Sign Text");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: tbsettings.signText.replace(/(^\s*)|(\s*$)/g,"").replace(/\s/g," ")||qsTr("Click To Set");
+                property Component dialog: null;
+                onClicked: {
+                    if (!dialog){ dialog = Qt.createComponent("Dialog/SetSignDialog.qml"); }
+                    dialog.createObject(page);
+                }
+            }
+            SelectionListItem {
+                title: qsTr("Custom Emoticon");
+                platformInverted: tbsettings.whiteTheme;
+                subTitle: qsTr("Click To Set");
+                onClicked: pageStack.push(Qt.resolvedUrl("CustomEmoPage.qml"));
+            }
+            SelectionListItem {
+                title: qsTr("Clear Network Cache");
+                platformInverted: tbsettings.whiteTheme;
+                Component.onCompleted: setSubTitle();
+                onClicked: {
+                    utility.clearNetworkCache();
+                    signalCenter.showMessage(qsTr("Cache is cleared"));
+                    setSubTitle();
+                }
+                function setSubTitle(){
+                    subTitle = qsTr("Current:")+Math.round(utility.cacheSize()/1024)+"kb";
                 }
             }
         }
     }
+
+    ScrollDecorator { platformInverted: tbsettings.whiteTheme; flickableItem: flickable; }
 }

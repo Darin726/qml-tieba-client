@@ -2,34 +2,33 @@ import QtQuick 1.1
 import com.nokia.symbian 1.1
 
 ContextMenu {
-    id: root
+    id: root;
 
-    property string threadId
-    property string postId
-    property bool isFloor
+    property variant modelData: null;
 
-    content: MenuLayout {
+    MenuLayout {
         MenuItem {
-            text: "查看该回复"
+            text: qsTr("View This Reply");
             onClicked: {
-                if (isFloor){
-                    app.enterSubfloor(threadId, null, postId)
+                if (modelData.is_floor == 1){
+                    app.enterFloor({ threadId: modelData.thread_id, subpostId: modelData.post_id });
                 } else {
-                    app.enterSubfloor(threadId, postId)
+                    app.enterFloor({threadId: modelData.thread_id, postId: modelData.post_id});
                 }
             }
         }
         MenuItem {
-            text: "查看该主题"
-            onClicked: app.enterThread(threadId)
+            text: qsTr("View This Thread");
+            onClicked: {
+                var opt = { threadId: modelData.thread_id, title: modelData.title }
+                app.enterThread(opt);
+            }
+        }
+        MenuItem {
+            text: qsTr("Enter Forum");
+            onClicked: {
+                app.enterForum(modelData.fname);
+            }
         }
     }
-    property bool opened
-    onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
-    }
 }
-

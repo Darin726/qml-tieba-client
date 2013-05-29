@@ -1,69 +1,45 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
-import "js/main.js" as Script
 
 MyPage {
-    id: messagePage
-    title: "消息提醒"
-    tools: homeTools
+    id: messagePage;
 
-    property alias currentTab: messageGroup.currentTab
-    property alias replyToMePage: replyToMePage
-    property alias atMePage: atMePage
+    property QtObject messageMenu: null;
 
-    Keys.onPressed: {
-        switch(event.key){
-        case Qt.Key_Left: {
-            if(currentTab == replyToMePage)
-                pageStack.pop(myBarPage)
-            else
-                currentTab = replyToMePage
-            event.accepted = true;
-            break;
-        }
-        case Qt.Key_Right: {
-            if (currentTab == replyToMePage)
-                currentTab = atMePage
-            else
-                app.enterProfilePage(Script.userId)
-            event.accepted = true;
-            break;
-        }
-        }
+    function openMenu(modelData){
+        if (!messageMenu) { messageMenu = Qt.createComponent("Dialog/EnterThreadMenu.qml").createObject(messagePage); }
+        messageMenu.modelData = modelData;
+        messageMenu.open();
     }
 
-    Connections {
-        target: signalCenter
-        onSwipeLeft: {
-            if (status == PageStatus.Active){
-                if (currentTab == replyToMePage)
-                    currentTab = atMePage
-                else
-                    app.enterProfilePage(Script.userId)
+    tools: mainTools;
+    title: tabGroup.currentTab.title;
+
+    TabHeader {
+        id: viewHeader;
+        ThreadButton {
+            tab: replyMePage;
+            Bubble {
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: platformStyle.paddingMedium; }
+                text: autoCheck.replyme > 20 ? "20+" : autoCheck.replyme;
+                visible: autoCheck.replyme > 0;
             }
         }
-        onSwipeRight: {
-            if (status == PageStatus.Active){
-                if(currentTab == replyToMePage)
-                    pageStack.pop(myBarPage)
-                else
-                    currentTab = replyToMePage
+        ThreadButton {
+            tab: atMePage;
+            Bubble {
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: platformStyle.paddingMedium; }
+                text: autoCheck.atme > 20 ? "20+" : autoCheck.atme;
+                visible: autoCheck.atme > 0;
             }
         }
     }
 
-    TabBar {
-        id: tabBar
-        platformInverted: tbsettings.whiteTheme
-        TabButton { text: "回复我的"; tab: replyToMePage; platformInverted: tbsettings.whiteTheme }
-        TabButton { text: "@我的"; tab: atMePage; platformInverted: tbsettings.whiteTheme }
-    }
     TabGroup {
-        id: messageGroup
-        anchors { fill: parent; topMargin: tabBar.height }
-        currentTab: replyToMePage
-        ReplyToMePage { id: replyToMePage }
-        AtMePage { id: atMePage }
+        id: tabGroup;
+        anchors { fill: parent; topMargin: viewHeader.height; }
+        ReplyMePage { id: replyMePage; }
+        AtMePage { id: atMePage;  }
     }
 }

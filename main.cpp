@@ -1,27 +1,40 @@
 #include <QtGui/QApplication>
-#include <QSplashScreen>
 #include <QtDeclarative>
+#include <QSplashScreen>
 #include "qmlapplicationviewer.h"
-
-#include "downloadmanager.h"
-#include "httpuploader.h"
-#include "scribblearea.h"
 #include "tbsettings.h"
 #include "utility.h"
 #include "tbnetworkaccessmanagerfactory.h"
+#include "httpuploader.h"
+#include "scribblearea.h"
 #include "customwebview.h"
+#include "downloader.h"
+
+#ifdef Q_OS_S60V5
+#include "qdeclarativepositionsource.h"
+#endif
+
+#ifdef QVIBRA
+#include <QVibra/qvibra.h>
+#endif
+
+#ifdef IN_APP_PURCHASE
+#include "qiap/qiap.h"
+#endif
+
+#ifdef Q_OS_HARMATTAN
+#include <QDBusConnection>
+#endif
 
 #ifdef Q_OS_SYMBIAN
 #include <QSymbianEvent>
 #include <w32std.h>
 #include <avkon.hrh>
-#endif
 
 class MyApplication : public QApplication
 {
 public:
     MyApplication( int argc, char** argv ) : QApplication( argc, argv ) {}
-#ifdef Q_OS_SYMBIAN
 protected:
     bool symbianEventFilter( const QSymbianEvent* event ) {
         if (event->type() == QSymbianEvent::WindowServerEvent){
@@ -30,23 +43,45 @@ protected:
         }
         return QApplication::symbianEventFilter(event);
     }
+};
 
 #endif
-};
 
 Q_DECL_EXPORT int main(int argc, char *argv[])
 {
-    QScopedPointer<MyApplication> app(new MyApplication(argc, argv));
-
-    QPixmap p(":/gfx/splash.png");
-    QSplashScreen *splash = new QSplashScreen(p);
+#ifdef Q_OS_SYMBIAN
+    QScopedPointer<QApplication> app(new MyApplication(argc, argv));
+#ifdef Q_OS_S60V5
+    QSplashScreen *splash = new QSplashScreen(QPixmap("qml/symbian1/gfx/splash.png"));
+#else
+    QSplashScreen *splash = new QSplashScreen(QPixmap("qml/tbclient/gfx/splash.png"));
+#endif
     splash->show();
     splash->raise();
-    app->processEvents();
+#else
+    QScopedPointer<QApplication> app(createApplication(argc, argv));
+#endif
 
-    app->setOrganizationName(QString("Yeatse"));
-    app->setApplicationName(QString("tbclient"));
+    QString locale = QLocale::system().name();
+    QTranslator translator;
+    if (translator.load(QString("tbclient_")+locale, ":/i18n/"))
+        app->installTranslator(&translator);
+
+    app->setOrganizationName("Yeatse");
+    app->setApplicationName("tbclient");
+
+#ifdef Q_OS_S60V5
+    app->setApplicationVersion("1.6.2");
+#else
     app->setApplicationVersion(VER);
+#endif
+
+    QmlApplicationViewer viewer;
+
+    viewer.setAttribute(Qt::WA_OpaquePaintEvent);
+    viewer.setAttribute(Qt::WA_NoSystemBackground);
+    viewer.viewport()->setAttribute(Qt::WA_NoSystemBackground);
+    viewer.viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 
     qmlRegisterUncreatableType<HttpPostField>("HttpUp", 1, 0, "HttpPostField", "Can't touch this");
     qmlRegisterType<HttpPostFieldValue>("HttpUp", 1, 0, "HttpPostFieldValue");
@@ -58,27 +93,59 @@ Q_DECL_EXPORT int main(int argc, char *argv[])
     qmlRegisterType<QDeclarativeWebSettings>();
     qmlRegisterType<QDeclarativeWebView>("CustomWebKit", 1, 0, "WebView");
 
-    QmlApplicationViewer viewer;
+#ifdef Q_OS_S60V5
+    qmlRegisterType<QDeclarativePositionSource>("LocationAPI", 1, 0, "PositionSource");
+#elif defined(Q_WS_SIMULATOR)
+    qmlRegisterType<QObject>("LocationAPI", 1, 0, "PositionSource");
+#endif
 
-    viewer.setAttribute(Qt::WA_OpaquePaintEvent);
-    viewer.setAttribute(Qt::WA_NoSystemBackground);
-    viewer.viewport()->setAttribute(Qt::WA_NoSystemBackground);
-    viewer.viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
+#ifdef QVIBRA
+    qmlRegisterType<QVibra>("Vibra", 1, 0, "Vibra");
+#elif defined(Q_WS_SIMULATOR)
+    qmlRegisterType<QObject>("Vibra", 1, 0, "Vibra");
+#endif
 
-    TBSettings settings;    
-    TBNetworkAccessManagerFactory factory;
-    DownloadManager manager;
+#ifdef IN_APP_PURCHASE
+    qmlRegisterType<QIap>("IAP", 1, 0, "QIap");
+#endif
+
+#ifdef Q_OS_HARMATTAN
+    viewer.engine()->addImageProvider(QLatin1String("background"), new BackgroundProvider);
+
+    new TBClientIf(&viewer);
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    bus.registerService("com.tbclient");
+    bus.registerObject("/com/tbclient", app.data());
+#endif
+
+    TBSettings tbsettings;
     Utility utility(viewer.engine());
+    TBNetworkAccessManagerFactory factory;
+    Downloader downloader;
 
     viewer.engine()->setNetworkAccessManagerFactory(&factory);
-    viewer.rootContext()->setContextProperty("utility", &utility);
-    viewer.rootContext()->setContextProperty("manager", &manager);
-    viewer.rootContext()->setContextProperty("tbsettings", &settings);
+    QDeclarativeContext* context = viewer.rootContext();
+    context->setContextProperty("tbsettings", &tbsettings);
+    context->setContextProperty("utility", &utility);
+    context->setContextProperty("downloader", &downloader);
 
+#ifdef Q_OS_SYMBIAN
+#ifdef Q_OS_S60V5
+    viewer.setMainQmlFile(QLatin1String("qml/symbian1/main.qml"));
+#else
     viewer.setMainQmlFile(QLatin1String("qml/tbclient/main.qml"));
+#endif
+#elif defined(Q_OS_HARMATTAN)
+    viewer.setMainQmlFile(QLatin1String("qml/meego/main.qml"));
+#else
+    viewer.setMainQmlFile(QLatin1String("qml/symbian1/main.qml"));
+#endif
     viewer.showExpanded();
 
+#ifdef Q_OS_SYMBIAN
     splash->finish(&viewer);
-    splash->~QSplashScreen();
+    splash->deleteLater();
+#endif
+
     return app->exec();
 }

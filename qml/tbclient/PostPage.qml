@@ -1,193 +1,324 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
-import "js/main.js" as Script
+import "../js/main.js" as Script
 
-Page {
-    id: page
+MyPage {
+    id: page;
 
-    property Item forumPage
+    property bool loading: false;
+    property variant param: null;
 
-    property variant imageinfo
-    property string imageurl
+    title: qsTr("Create A New Thread");
 
-    property bool loading
+    tools: ToolBarLayout {
+        ToolButtonWithTip {
+            toolTipText: qsTr("Cancel");
+            text: qsTr("Cancel");
+            onClicked: {
+                tbsettings.draftBox = contentArea.text;
+                pageStack.pop();
+            }
+        }
+    }
 
-    function post(vcode, vcodeMd5){
-        if (titleArea.text == "")
-            return app.showMessage("请输入贴子标题")
-        if (page.imageurl != "" && !page.imageinfo)
-            return signalCenter.postImage(page.toString(), page.imageurl)
+    QtObject {
+        id: internal;
 
-        var cont = contentArea.text
-        if (page.imageinfo)
-            cont += "\n#(pic,"+imageinfo.pic_id+","+imageinfo.width+","+imageinfo.height+")"
+        property string selectedImageUrl: "";
+        property variant selectedImageInfo: null;
 
-        Script.postArticle(page, titleArea.text, cont, forumPage.forum, vcode, vcodeMd5)
+        property QtObject emotionSelector: null;
+        property QtObject imageSelectDialog: null;
+
+        function post(vcode, vcodeMd5){
+            if (page.state == ""){
+                if (titleField.text.length == 0){
+                    signalCenter.showMessage(qsTr("Title is required"));
+                    return;
+                }
+            } else {
+                if (contentArea.text.length == 0 && selectedImageUrl.length == 0){
+                    signalCenter.showMessage(qsTr("Content is required"));
+                    return;
+                }
+            }
+
+            if (selectedImageUrl && !selectedImageInfo){
+                signalCenter.postImage(page.toString(), selectedImageUrl);
+                return;
+            }
+
+            var opt = new Object();
+            if (vcode){ opt.vcode = vcode; opt.vcodeMd5 = vcodeMd5; }
+
+            var content = contentArea.text;
+            if (selectedImageInfo){
+                content += "\n#(pic,"+selectedImageInfo.pic_id+","+selectedImageInfo.width+","+selectedImageInfo.height+")";
+            }
+            opt.content = content;
+
+            if (page.state == ""){
+                opt.fid = param.fid;
+                opt.kw = param.kw;
+                opt.title = titleField.text;
+                if (tbsettings.shareLocation && positionSource.valid){
+                    var coor = positionSource.position.coordinate;
+                    opt.lbs = coor.latitude+"%2C"+coor.longitude;
+                }
+                Script.addThread(page, opt);
+            } else if (page.state == "post"){
+                opt.fid = param.fid;
+                opt.kw = param.kw;
+                opt.tid = param.tid;
+                Script.addPost(page, opt);
+            } else if (page.state == "weipost"){
+                opt.weipost = true;
+                opt.fid = "";
+                if (positionSource.valid){
+                    var coor = positionSource.position.coordinate;
+                    opt.lbs = coor.latitude+"%2C"+coor.longitude;
+                }
+                Script.addThread(page, opt);
+            }
+        }
     }
 
     Connections {
-        target: signalCenter
-        onEmotionSelected: {
+        target: signalCenter;
+        onPostStarted: {
             if (caller == page.toString()){
-                var pos = contentArea.cursorPosition
-                var str1 = contentArea.text.slice(0, pos)
-                var str2 = contentArea.text.slice(pos)
-                contentArea.text = str1 + name + str2
-                contentArea.cursorPosition = pos + name.length
+                loading = true;
             }
         }
-        onImageSelected: {
+        onPostFinished: {
             if (caller == page.toString()){
-                page.imageurl = url
+                tbsettings.draftBox = "";
+                loading = false;
+                if (type == "thread"){
+                    pageStack.pop();
+                    param.caller.getlist("renew");
+                } else if (type == "post"){
+                    pageStack.pop();
+                    var view = param.caller;
+                    if (view.isReverse?!view.hasPrev:!view.hasMore){
+                        view.getlist(view.isReverse?"prev":"next");
+                    }
+                }
             }
         }
-        onFriendSelected: {
+        onPostFailed: {
             if (caller == page.toString()){
-                var pos = contentArea.cursorPosition
-                var str1 = contentArea.text.slice(0, pos)
-                var str2 = contentArea.text.slice(pos)
-                contentArea.text = str1 + name + str2
-                contentArea.cursorPosition = pos + name.length
-            }
-        }
-        onUploadFinished: {
-            if (caller == page.toString()){
-                page.imageinfo = info
-                post()
+                loading = false;
             }
         }
         onVcodeSent: {
             if (caller == page.toString()){
-                post(vcode, vcodeMd5)
+                internal.post(vcode, vcodeMd5);
             }
         }
-        onPostArticleStarted: {
-            if (caller == page.toString()){
-                loading = true
+        onImageSelected: {
+            if (caller == page.toString() && url){
+                internal.selectedImageUrl = url;
             }
         }
-        onPostArticleFailed: {
+        onUploadFinished: {
             if (caller == page.toString()){
-                loading = false
-                app.showMessage(errorString)
+                internal.selectedImageInfo = info;
+                internal.post();
             }
         }
-        onPostArticleSuccessed: {
+        onEmotionSelected: {
             if (caller == page.toString()){
-                loading = false
-                app.showMessage("发送成功")
-                forumPage.pageNumber = 1
-                app.multiThread(function(){forumPage.internal.getList()})
-                pageStack.pop()
+                var c = contentArea.cursorPosition;
+                contentArea.text = contentArea.text.substring(0,c)+name+contentArea.text.substring(c);
+                contentArea.cursorPosition = c+name.length;
+            }
+        }
+        onFriendSelected: {
+            if (caller == page.toString()){
+                var c = contentArea.cursorPosition;
+                contentArea.text = contentArea.text.substring(0,c)+"@"+name+" "+contentArea.text.substring(c);
+                contentArea.cursorPosition = c+name.length+2;
             }
         }
         onLoadFailed: loading = false;
     }
 
-    tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"; onClicked: pageStack.pop()
+    ViewHeader {
+        id: viewHeader;
+        headerText: title;
+        headerIcon: "gfx/edit.svg";
+        loading: page.loading;
+        opacity: app.inPortrait||!inputContext.visible ? 1 : 0;
+        Behavior on opacity { NumberAnimation { duration: 200; } }
+    }
+
+    TextField {
+        id: titleField;
+        anchors {
+            left: parent.left; leftMargin: platformStyle.paddingLarge;
+            right: parent.right; rightMargin: platformStyle.paddingLarge;
+            top: viewHeader.bottom; topMargin: platformStyle.paddingLarge;
         }
-        ButtonRow {
-            exclusive: false
-            property bool platformInverted
+        maximumLength: 31;
+        placeholderText: qsTr("Pleast Input Title (Required)");
+        platformInverted: tbsettings.whiteTheme;
+        states: State {
+            name: "landscapeInput";
+            AnchorChanges { target: titleField; anchors.top: page.top; }
+            PropertyChanges { target: titleField; anchors.topMargin: 0; }
+            when: titleField.visible && viewHeader.opacity == 0;
+        }
+        transitions: Transition { AnchorAnimation { duration: 200; } }
+    }
+
+    Item {
+        id: toolsBanner;
+        anchors {
+            left: parent.left; leftMargin: platformStyle.paddingLarge;
+            right: parent.right; rightMargin: platformStyle.paddingLarge;
+            bottom: parent.bottom; bottomMargin: screen.width > screen.height ? platformStyle.paddingLarge : 180;
+        }
+        height: childrenRect.height;
+        opacity: inputContext.visible ? 0 : 1;
+        Behavior on opacity { NumberAnimation { duration: 250; } }
+        Row {
+            id: toolsRow;
+            anchors.left: parent.left;
+            spacing: platformStyle.paddingSmall;
             ToolButton {
-                platformInverted: parent.platformInverted
-                iconSource: "qrc:/gfx/write_face_%1.png".arg(pressed?"s":"n")
+                platformInverted: tbsettings.whiteTheme;
+                iconSource: platformInverted?"gfx/btn_insert_face_nor.png":"gfx/btn_insert_face_res.png";
                 onClicked: {
-                    var diag = Qt.createComponent("Dialog/EmotionSelector.qml").createObject(page)
-                    diag.open()
+                    dialog.selectEmotion(page, false);
                 }
             }
             ToolButton {
-                platformInverted: parent.platformInverted
-                iconSource: "qrc:/gfx/write_at_%1.png".arg(pressed?"s":"n")
+                platformInverted: tbsettings.whiteTheme;
+                iconSource: platformInverted?"gfx/btn_insert_at_nor.png":"gfx/btn_insert_at_res.png";
                 onClicked: {
-                    pageStack.push(Qt.resolvedUrl("Component/FriendSelector.qml"), { caller: page })
+                    pageStack.push(Qt.resolvedUrl("SelectFriendPage.qml"), {caller: page});
                 }
             }
             ToolButton {
-                platformInverted: parent.platformInverted
-                iconSource: "qrc:/gfx/write_image_%1.png".arg(pressed?"s":"n")
-                onClicked: {
-                    var diag = Qt.createComponent("Dialog/ImageSelectorDialog.qml")
-                    .createObject(page, { caller: page })
-                    diag.open()
-                }
+                platformInverted: tbsettings.whiteTheme;
+                iconSource: platformInverted ? "gfx/btn_insert_pics_nor.png" : "gfx/btn_insert_pics_res.png";
+                onClicked: dialog.createImageSelectDialog(page);
             }
         }
         ToolButton {
-            iconSource: "qrc:/gfx/ok%1.svg".arg(platformInverted?"_inverted":"")
-            enabled: !loading
-            onClicked: post()
+            anchors.top: screen.width > screen.height ? parent.top : toolsRow.bottom;
+            anchors.right: parent.right;
+            platformInverted: tbsettings.whiteTheme;
+            text: qsTr("Post");
+            enabled: (uploader.caller != page.toString()||uploader.uploadState == 0)&&!loading;
+            onClicked: internal.post();
+        }
+    }
+    TextArea {
+        id: contentArea;
+        anchors {
+            left: parent.left;
+            right: parent.right;
+            top: titleField.bottom;
+            bottom: inputContext.visible ? parent.bottom : toolsBanner.top;
+            margins: platformStyle.paddingLarge;
+        }
+        textFormat: TextEdit.PlainText;
+        platformInverted: tbsettings.whiteTheme;
+        placeholderText: qsTr("Tap To Input");
+        Component.onCompleted: {
+            text = tbsettings.draftBox;
+        }
+    }
+    Loader {
+        id: imagePreviewLoader;
+        width: 160; height: 160;
+        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 20; }
+        sourceComponent: !inputContext.visible && internal.selectedImageUrl ? imagePreview : undefined;
+        states: [
+            State {
+                name: "landscape";
+                PropertyChanges {
+                    target: imagePreviewLoader;
+                    width: privateStyle.toolBarHeightLandscape;
+                    height: privateStyle.toolBarHeightLandscape;
+                    anchors.bottomMargin: platformStyle.paddingLarge;
+                    anchors.horizontalCenterOffset: platformStyle.graphicSizeMedium;
+                }
+                when: screen.width > screen.height;
+            }
+        ]
+        Component {
+            id: imagePreview;
+            Item {
+                anchors.fill: parent;
+                MouseArea {
+                    anchors.fill: parent;
+                    enabled: uploader.caller != page.toString() || uploader.uploadState == 0;
+                    onClicked: {
+                        pageStack.push(Qt.resolvedUrl("ImagePage.qml"), { imageUrl: internal.selectedImageUrl });
+                    }
+                }
+                Image {
+                    anchors.fill: parent;
+                    sourceSize.height: 160;
+                    fillMode: Image.PreserveAspectCrop;
+                    source: internal.selectedImageUrl;
+                    clip: true;
+                }
+                Rectangle {
+                    anchors.centerIn: parent;
+                    width: platformStyle.graphicSizeMedium;
+                    height: platformStyle.graphicSizeMedium;
+                    color: screen.width > screen.height ? "#C0000000" :platformStyle.colorDisabledMid;
+                    radius: 5;
+                    visible: uploader.caller == page.toString() && uploader.uploadState == 2;
+                    Label {
+                        anchors.centerIn: parent;
+                        text: Math.floor(uploader.progress*100)+"%";
+                    }
+                }
+                ToolButton {
+                    anchors {
+                        right: parent.right; top: parent.top;
+                        margins: -platformStyle.paddingLarge;
+                    }
+                    platformInverted: tbsettings.whiteTheme;
+                    enabled: !loading;
+                    iconSource: platformInverted ? "gfx/tb_close_stop_inverted.svg"
+                                                 : "gfx/tb_close_stop.svg";
+                    onClicked: {
+                        if (uploader.caller != page.toString() || uploader.uploadState == 0){
+                            internal.selectedImageUrl = "";
+                        } else if (uploader.uploadState == 2){
+                            uploader.abort();
+                        }
+                    }
+                }
+            }
         }
     }
 
-    ViewHeader {
-        id: viewHeader
-        headerText: "发新贴"
-        visible: height > 0
-        height: screen.width < screen.height ? privateStyle.tabBarHeightPortrait : 0
-    }
-    TextField {
-        id: titleArea
-        anchors {
-            left: parent.left; right: parent.right; top: viewHeader.bottom
-            margins: platformStyle.paddingMedium
-        }
-        placeholderText: "标题（必填）"
-        maximumLength: 31
-        platformInverted: tbsettings.whiteTheme
-    }
-    TextArea {
-        id: contentArea
-        anchors {
-            left: parent.left; right: parent.right; top: titleArea.bottom; bottom: previewLoader.top
-            margins: platformStyle.paddingMedium
-        }
-        placeholderText: "内容"
-        platformInverted: tbsettings.whiteTheme
-    }
-    Loader {
-        id: previewLoader
-        width: parent.width
-        height: sourceComponent == undefined ? 0 : platformStyle.graphicSizeMedium
-        anchors.bottom: parent.bottom
-        sourceComponent: page.imageurl == "" ? undefined : imagePreviewComp
-        Behavior on height {
-            NumberAnimation { duration: 150 }
-        }
-    }
-    Component {
-        id: imagePreviewComp
-        Item {
-            Image {
-                sourceSize: Qt.size(platformStyle.graphicSizeMedium,
-                                    platformStyle.graphicSizeMedium)
-                source: page.imageurl
+    states: [
+        State {
+            name: "post";
+            PropertyChanges { target: page; title: qsTr("Add A Reply"); }
+            PropertyChanges { target: titleField; visible: false; }
+            PropertyChanges {
+                target: contentArea;
+                anchors.top: app.inPortrait||!inputContext.visible ? viewHeader.bottom : page.top;
             }
-            Button {
-                text: "清除"
-                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                platformInverted: tbsettings.whiteTheme
-                enabled: uploader.currentCaller != page.toString() || uploader.uploadState != 2
-                onClicked: {
-                    page.imageinfo = undefined
-                    page.imageurl = ""
-                }
-            }
-            ProgressBar {
-                platformInverted: tbsettings.whiteTheme
-                anchors.centerIn: parent
-                value: {
-                    if (page.imageinfo)
-                        return 1
-                    if (uploader.currentCaller == page.toString())
-                        return uploader.progress
-                    return 0
-                }
+        },
+        State {
+            name: "weipost";
+            PropertyChanges { target: page; title: qsTr("Create A Weipost"); }
+            PropertyChanges { target: titleField; visible: false; }
+            PropertyChanges {
+                target: contentArea;
+                anchors.top: app.inPortrait||!inputContext.visible ? viewHeader.bottom : page.top;
             }
         }
-    }
+    ]
 }

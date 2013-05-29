@@ -1,104 +1,88 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
-import "js/main.js" as Script
+import "Delegate"
+import "../js/main.js" as Script
 
 MyPage {
-    id: friendListPage
+    id: page;
 
-    property bool loading: false
+    property bool loading: false;
+    property int totalCount: 0;
+    property bool hasMore: false;
+    property int currentPage: 1;
+    property string type: "follow";
+    property string uid: Script.uid;
 
-    property string type
-    property int pageNumber: 1
-    property variant page: ({})
-    property string userId
-
-    function getlist(isRenew){
-        if (isRenew) pageNumber = 1
-        else pageNumber ++
-        Script.getFriendList(friendListPage.toString(), type, "page", userId, listModel, isRenew, pageNumber)
-    }
-
-    title: (type=="follow"?"关注":"粉丝")+"(%1)".arg(page.total_count||0)
+    title: type=="follow"?qsTr("Friends"):qsTr("Fans");
 
     tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"; onClicked: pageStack.pop()
+        ToolButtonWithTip {
+            toolTipText: qsTr("Back");
+            iconSource: "toolbar-back";
+            onClicked: pageStack.pop();
         }
+    }
+
+    function getlist(option){
+        option = option||"renew";
+        var opt = { type: type, model: listModel }
+
+        if (uid != Script.uid)
+            opt.uid = uid;
+
+        if (option == "renew"){
+            if (type == "fans" && uid == Script.uid)
+                autoCheck.fans = 0;
+            currentPage = 1;
+            opt.renew = true;
+        } else if (option == "more"){
+            opt.pn = currentPage + 1;
+        }
+        Script.getFriendList(page, opt);
     }
 
     Connections {
-        target: signalCenter
+        target: signalCenter;
         onGetFriendListStarted: {
-            if (caller == friendListPage.toString())
-                loading = true
-        }
-        onGetFriendListFailed: {
-            if (caller == friendListPage.toString()){
-                loading = false
-                app.showMessage(errorString)
+            if (caller == page.toString()){
+                loading = true;
             }
         }
-        onGetFriendListSuccessed: {
-            if (caller == friendListPage.toString()){
-                loading = false
-                friendListPage.page = page
-                pageNumber = page.current_page
+        onGetFriendListFinished: {
+            if (caller == page.toString()){
+                loading = false;
             }
         }
+        onLoadFailed: {
+            loading = false;
+        }
+    }
+
+    ViewHeader {
+        id: viewHeader;
+        headerIcon: "gfx/contacts.svg";
+        headerText: title+"("+totalCount+")";
+        loading: page.loading;
     }
 
     ListView {
-        id: view
-        anchors.fill: parent
-        model: ListModel { id: listModel }
-        delegate: ListItem {
-            id: root
-            onClicked: app.enterProfilePage(model.id)
-            platformInverted: tbsettings.whiteTheme
-            Row {
-                anchors {
-                    left: parent.paddingItem.left
-                    verticalCenter: parent.verticalCenter
-                }
-                spacing: platformStyle.paddingLarge
-                Image {
-                    width: root.paddingItem.height
-                    height: width
-                    fillMode: Image.PreserveAspectFit
-                    source: "http://tb.himg.baidu.com/sys/portraitn/item/"+model.portrait
-                }
-                ListItemText {
-                    platformInverted: root.platformInverted
-                    text: model.name_show
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-            }
+        id: view;
+        anchors { fill: parent; topMargin: viewHeader.height; }
+        model: ListModel { id: listModel; }
+        header: PullToActivate {
+            myView: view;
+            onRefresh: getlist();
         }
-        footer: Item {
-            width: screen.width; height: visible ? platformStyle.graphicSizeLarge : 0
-            visible: page.has_more == 1
-            Button {
-                width: parent.width - platformStyle.paddingLarge*2
-                anchors.centerIn: parent
-                platformInverted: tbsettings.whiteTheme
-                enabled: !loading
-                text: loading ? "正在加载..." : "点击加载更多"
-                onClicked: getlist()
-            }
+        delegate: FriendDelegate {
+            onClicked: signalCenter.linkActivated("at:"+model.id);
         }
-    }
-    Label {
-        anchors.centerIn: parent
-        text: "正在加载数据..."
-        visible: view.count == 0 && loading
-        font.pixelSize: platformStyle.graphicSizeSmall
-        color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
-                                     : platformStyle.colorDisabledMid
+        footer: FooterItem {
+            visible: page.hasMore;
+            enabled: !loading;
+            onClicked: getlist("more");
+        }
     }
 
-    ScrollDecorator {
-        flickableItem: view
-        platformInverted: tbsettings.whiteTheme
-    }
+    ScrollDecorator { flickableItem: view; platformInverted: tbsettings.whiteTheme; }
 }

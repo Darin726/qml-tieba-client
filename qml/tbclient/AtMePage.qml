@@ -1,145 +1,82 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
+import "../js/main.js" as Script
+import "Delegate"
 import "Component"
-import "js/main.js" as Script
 
 Page {
-    id: atMePage
+    id: page;
 
-    property bool loading: false
+    property bool loading: false;
+    property string title: qsTr("At Me");
 
-    property int pageNumber: 1
-    property bool firstStart: true
+    property int currentPage: 1;
+    property bool hasMore: false;
+    property bool firstStart: true;
+    property double lastUpdate: 0;
 
-    function setComp(flag){
-        if (!flag)
-            atMeLoader.sourceComponent = undefined
-        else if (flag && atMeLoader.status == Loader.Null)
-            atMeLoader.sourceComponent = atMeComp
+    function positionAtTop(){
+        view.positionViewAtBeginning();
     }
+
+    function getlist(option){
+        option = option||"renew";
+        var opt = { page: page, model: listModel }
+        if (option == "renew"){
+            autoCheck.atme = 0;
+            currentPage = 1;
+            opt.pn = 1;
+        } else if (option == "more"){
+            opt.pn = currentPage+1;
+        }
+        Script.getAtMe(opt);
+    }
+
     onVisibleChanged: {
-        setComp(visible)
         if (visible){
-            atMeLoader.forceActiveFocus()
-            if (firstStart){
-                firstStart = false
+            if (autoCheck.atme > 0){
+                getlist();
+            } else if (firstStart){
                 try {
-                    Script.loadAtMeList(utility.getCache("atMeList"), [true, atMeModel], true)
+                    Script.loadAtMe(utility.getCache("AtMe"), {page: page, model: listModel});
                 } catch(e){
-                    getlist(true)
+                    getlist();
                 }
             }
+            firstStart = false;
         }
-    }
-    function getlist(isRenew){
-        if (isRenew) pageNumber = 1
-        else pageNumber ++
-        Script.getAtMeList(pageNumber, isRenew, atMeModel)
     }
 
     Connections {
-        target: signalCenter
-        onGetAtListStarted: loading = true
-        onGetAtListFailed: {
-            loading = false
-            app.showMessage(errorString)
-        }
-        onGetAtListSuccessed: {
-            loading = false
-            pageNumber = page.current_page
-            if (!cached)
-                utility.setCache("atMeList", result)
-        }
-        onCurrentUserChanged: firstStart = true
-    }
-    ListModel { id: atMeModel }
-    Label {
-        anchors.centerIn: parent
-        text: loading ? "正在加载数据..." : "无结果"
-        visible: atMeLoader.status == Loader.Ready && atMeLoader.item.count == 0
-        color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
-                                     : platformStyle.colorDisabledMid
-        font.pixelSize: platformStyle.graphicSizeSmall
-    }
-    Loader {
-        id: atMeLoader
-        anchors.fill: parent
-    }
-    Component {
-        id: atMeComp
-        ListView {
-            id: atMeView
-            clip: true
-            cacheBuffer: height
-            model: atMeModel
-            header: myHeader
-            delegate: myDelComp
-            focus: true
-            Component {
-                id: myHeader
-                PullToActivate {
-                    myView: atMeView
-                    onRefresh: getlist(true)
-                }
-            }
-            Component {
-                id: myDelComp
-                ListItem {
-                    id: listItem
-                    implicitHeight: delCol.height + platformStyle.paddingLarge*2
-                    platformInverted: tbsettings.whiteTheme
-                    onClicked: {
-                        var itemMenu = Qt.createComponent("Dialog/EnterThreadMenu.qml").createObject(atMePage)
-                        itemMenu.threadId = thread_id; itemMenu.postId = post_id; itemMenu.isFloor = is_floor == 1
-                        itemMenu.open()
-                    }
-                    Image {
-                        id: avatarImage
-                        anchors {
-                            left: parent.left; top: parent.top; margins: platformStyle.paddingLarge
-                        }
-                        width: platformStyle.graphicSizeMedium; height: platformStyle.graphicSizeMedium
-                        sourceSize: Qt.size(width, height)
-                        Component.onCompleted: {
-                            if (tbsettings.showAvatar)
-                                source = "http://tb.himg.baidu.com/sys/portraitn/item/"+replyer.portrait
-                            else
-                                source = "qrc:/gfx/photo.png"
-                        }
-                        Image {
-                            anchors.fill: parent
-                            sourceSize: Qt.size(width, height)
-                            source: visible ? "qrc:/gfx/photo.png" : ""
-                            visible: parent.status != Image.Ready
-                        }
-                    }
-                    Column {
-                        id: delCol
-                        anchors {
-                            left: avatarImage.right; leftMargin: platformStyle.paddingMedium
-                            top: parent.paddingItem.top; right: parent.paddingItem.right
-                        }
-                        spacing: platformStyle.paddingMedium
-                        ListItemText {
-                            platformInverted: listItem.platformInverted
-                            text: replyer.name_show
-                            role: "SubTitle"
-                        }
-                        Label {
-                            text: content
-                            width: parent.width
-                            wrapMode: Text.Wrap
-                            platformInverted: listItem.platformInverted
-                        }
-                        ListItemText {
-                            anchors.right: parent.right
-                            platformInverted: listItem.platformInverted
-                            role: "SubTitle"
-                            Component.onCompleted: text = Script.formatDateTime(model.time*1000)
-                        }
-                    }
-                }
+        target: signalCenter;
+        onGetAtMeStarted: loading = true;
+        onGetAtMeFinished: loading = false;
+        onLoadFailed: loading = false;
+        onUserChanged: {
+            if (page.visible){
+                getlist();
+            } else {
+                firstStart = true;
             }
         }
     }
+
+    ListView {
+        id: view;
+        anchors.fill: parent;
+        model: ListModel { id: listModel; }
+        delegate: AtMeDelegate {}
+        header: PullToActivate {
+            myView: view;
+            lastUpdateTime: page.lastUpdate;
+            onRefresh: getlist();
+        }
+        footer: FooterItem {
+            visible: hasMore;
+            enabled: !loading;
+            onClicked: getlist("more")
+        }
+    }
+
+    ScrollDecorator { flickableItem: view; platformInverted: tbsettings.whiteTheme; }
 }

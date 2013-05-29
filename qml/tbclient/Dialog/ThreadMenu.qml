@@ -1,68 +1,119 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
-import "../js/main.js" as Script
+import "../../js/main.js" as Script
+import "../../js/Calculate.js" as Calc
 
 ContextMenu {
-    id: root
+    id: root;
 
-    property int currentIndex
-    property variant modelData: ({})
+    property variant page: null;
+    property int currentIndex: 0;
+    property variant modelData: null;
+
+    property bool __isClosing: false;
+    onStatusChanged: {
+        if (status == DialogStatus.Closing){
+            __isClosing = true;
+        } else if (status == DialogStatus.Closed && __isClosing){
+            root.destroy();
+        }
+    }
+    Component.onCompleted: open();
 
     MenuLayout {
         MenuItem {
-            text: "添加到书签"
+            id: item1;
+            text: qsTr("Add to bookmark");
             onClicked: {
-                app.addBookmark(threadId, modelData.id, thread.author.name_show, thread.title, isLz)
+                app.addBookmark(page.thread.id, modelData.id, page.thread.author.name_show, page.thread.title, page.isLz);
             }
         }
         MenuItem {
-            text: "回复"
+            id: item2;
+            text: qsTr("Reader Mode");
             onClicked: {
-                threadPage.state = "replyAreaOpened"
-                replyLoader.item.floorNum = modelData.floor
-                replyLoader.item.quoteId = modelData.id
+                var prop = { currentIndex: currentIndex, caller: page, listModel: page.listView.model }
+                pageStack.push(Qt.resolvedUrl("../ReaderPage.qml"), prop);
             }
         }
         MenuItem {
-            text: "阅读模式"
-            onClicked: app.pageStack.push(Qt.resolvedUrl("../Reader.qml")
-                                          ,{ currentIndex: root.currentIndex, myView: threadView})
+            id: item3;
+            text: qsTr("Copy Content");
+            onClicked: {
+                var prop = { text: Calc.extractContent(modelData.content) };
+                pageStack.push(Qt.resolvedUrl("../CopyPage.qml"), prop);
+            }
         }
         MenuItem {
-            text: "复制内容"
-            onClicked: app.pageStack.push(Qt.resolvedUrl("../Component/CopyPage.qml"),
-                                          { sourceObject: modelData.content })
-        }
-        MenuItem {
-            text: "删除" + (modelData.floor == 1 ? "主题" : "此贴")
-            visible: {
-                switch (manageGroup){
-                case 0: return false;
-                case 1: return true;
-                case 2: return true;
-                default: return modelData.floor != 1
+            id: item4;
+            text: modelData.floor == 1 ? qsTr("Delete this thread") : qsTr("Delete this post");
+            visible: page != null && page.user != null && (page.user.is_manager!=0||(modelData.floor!=1&&page.user.id==page.thread.author.id));
+            onClicked: {
+                var opt = { fid: page.forum.id, word: page.forum.name, z: page.thread.id };
+                if (modelData.floor == 1){
+                    Script.deleteThread(page, opt);
+                } else {
+                    opt.vip = page.user.is_manager == 0;
+                    opt.pid = modelData.id;
+                    opt.src = 1;
+                    Script.deletePost(page, opt);
                 }
             }
-            onClicked: {
-                Script.threadManage(threadPage,
-                                    modelData.floor==1?"delthread":"delpost",
-                                    modelData.id,
-                                    manageGroup==3,
-                                    false,
-                                    1)
-            }
         }
         MenuItem {
-            text: "封禁用户"
-            visible: manageGroup == 1 || manageGroup == 2 && (modelData.author?modelData.author.type!=0:false)
-            onClicked: commitprison(modelData.author.name)
+            id: item5;
+            text: qsTr("Commit to prison");
+            visible: page != null && page.user != null && page.user.is_manager != 0;
+            onClicked: {
+                var opt = { fid: page.forum.id, un: modelData.author.name, word: page.forum.name, z: page.thread.id }
+                dialog.commitPrison(page.user.is_manager, opt);
+            }
         }
     }
-    property bool opened
-    onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
-    }
+
+    states: [
+        State {
+            name: "floor";
+            PropertyChanges { target: item1; visible: false; }
+            PropertyChanges { target: item2; visible: false; }
+            PropertyChanges {
+                target: item3;
+                onClicked: {
+                    var prop = { text: modelData.content.replace(/<[^>]*>/g, "") };
+                    pageStack.push(Qt.resolvedUrl("../CopyPage.qml"), prop);
+                }
+            }
+            PropertyChanges {
+                target: item4;
+                text: qsTr("Delete this post");
+                visible: page != null && modelData.floor != 1 && (page.manager != 0||Script.uid == page.thread.author.id);
+                onClicked: {
+                    var opt = {
+                        fid: page.forum.id,
+                        vip: page.manager == 0,
+                        isfloor: modelData.floor == 0,
+                        pid: modelData.id,
+                        src: modelData.floor == 0 ? 3 : 1,
+                        word: page.forum.name,
+                        z: page.thread.id
+                    };
+                    Script.deletePost(page, opt);
+                }
+            }
+            PropertyChanges {
+                target: item5;
+                visible: page != null && page.manager != 0;
+                onClicked: {
+                    var opt = {
+                        fid: page.forum.id,
+                        un: modelData.author.name,
+                        word: page.forum.name,
+                        z: page.thread.id
+                    }
+                    dialog.commitPrison(page.manager, opt);
+                }
+            }
+            when: root.currentIndex < 0;
+        }
+    ]
 }

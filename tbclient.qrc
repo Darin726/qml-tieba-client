@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/i18n">
+        <file alias="tbclient_zh.qm">i18n/tbclient_zh.qm</file>
+    </qresource>
+</RCC>

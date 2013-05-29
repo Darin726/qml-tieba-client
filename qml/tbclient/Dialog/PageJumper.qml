@@ -7,11 +7,10 @@ CommonDialog {
     property int currentValue: 1
     property int totalPage: 1
 
-    signal pageJumped
-
-    titleText: "跳转到页码：[1-%1]".arg(String(totalPage))
-    buttonTexts: ["确定", "取消"]
+    titleText: qsTr("Jump To Page: [1-%1]").arg(String(totalPage));
+    buttonTexts: [qsTr("OK"), qsTr("Cancel")];
     privateCloseIcon: true
+
     content: Row {
         id: row
         anchors {
@@ -33,20 +32,15 @@ CommonDialog {
             text: root.currentValue
             validator: IntValidator { bottom: 1; top: root.totalPage }
             onTextChanged: root.currentValue = text || 1
-            inputMethodHints: Qt.ImhDigitsOnly
+            inputMethodHints: Qt.ImhDigitsOnly;
         }
     }
     onClickedOutside: close()
     onButtonClicked: {
         if (index == 0){
-            root.pageJumped()
+            root.accept();
+        } else {
+            root.reject();
         }
-    }
-    property bool opened
-    onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
     }
 }

@@ -1,84 +1,95 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import com.nokia.extras 1.1
-import "js/main.js" as Script
+import Vibra 1.0
+import "../js/main.js" as Script
 
 Item {
-    id: root
+    id: root;
+
+    property int fans: 0;
+    property int replyme: 0;
+    property int atme: 0;
 
     Connections {
-        target: signalCenter
-        onGetMessageFailed: app.showMessage(errorString)
-        onGetMessageSuccessed: {
-            if (type != ""){
-                banner.text = msg
-                banner.infoType = type
-                banner.open()
+        target: signalCenter;
+        onMessageReceived: {
+            if (tbsettings.remindFans) root.fans = fans;
+            if (tbsettings.remindReplyme) root.replyme = replyme;
+            if (tbsettings.remindAtme) root.atme = atme;
+            internal.displyMessage();
+        }
+        onUserChanged: {
+            if (Script.BDUSS.length > 0){
+                autocheckTimer.restart();
+            } else {
+                autocheckTimer.stop();
             }
         }
-        onCurrentUserChanged: {
-            if (Script.BDUSS == "")
-                autoRenewTimer.stop()
-            else
-                autoRenewTimer.restart()
+    }
+
+    Connections {
+        target: Qt.application;
+        onActiveChanged: {
+            if (Qt.application.active){ internal.displyMessage(); }
         }
     }
-    Connections {
-        target: tbsettings
-        onRemindFrequencyChanged: {
-            if (tbsettings.remindFrequency == 0)
-                autoRenewTimer.stop()
-            else if (Script.BDUSS!="")
-                autoRenewTimer.restart()
+
+    QtObject {
+        id: internal;
+
+        function displyMessage(){
+            var displayList = [];
+            if (fans > 0){
+                infoBanner.infoType = "fans";
+                displayList.push(qsTr("%1 new fans").arg(fans));
+            }
+            if (replyme > 0){
+                infoBanner.infoType = "replyme";
+                displayList.push(qsTr("%1 new replies").arg(replyme));
+            }
+            if (atme > 0){
+                infoBanner.infoType = "atme";
+                displayList.push(qsTr("%1 new reminds").arg(atme));
+            }
+            if (displayList.length > 0){
+                if (Qt.application.active) {
+                    infoBanner.text = displayList.join("\n");
+                    infoBanner.open();
+                } else if (tbsettings.remindBackground){
+                    displayList.unshift(qsTr("TBClient:"));
+                    utility.showGlobalNote(displayList.join("\n"));
+                    vibra.start(800);
+                }
+            }
+        }
+
+        function infoBannerClicked(){
+            if (infoBanner.infoType == "replyme"||infoBanner.infoType == "atme"){
+                messageToolButton.clicked();
+            } else if (infoBanner.infoType == "fans"){
+                var p = pageStack.push(Qt.resolvedUrl("FriendListPage.qml"), { type:"fans" });
+                p.getlist();
+            }
         }
     }
 
     Timer {
-        id: autoRenewTimer
-        interval: tbsettings.remindFrequency
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: Script.getMessage()
+        id: autocheckTimer;
+        interval: tbsettings.remindBackground||Qt.application.active ? tbsettings.remindFrequency*60*1000 : 0;
+        repeat: true;
+        triggeredOnStart: true;
+        onTriggered: Script.getMessage();
     }
+
+    Vibra { id: vibra; }
+
     InfoBanner {
-        id: banner
-        property string infoType
-        iconSource: "qrc:/gfx/icon.svg"
-        interactive: true
-        platformInverted: tbsettings.whiteTheme
-        timeout: 0
-        onClicked: {
-            if (Script.BDUSS != ""){
-                switch(infoType){
-                case "fans": {
-                    app.pageStack.push(Qt.resolvedUrl("FriendListPage.qml"),
-                                       { userId: Script.userId, type: "fans" }).getlist(true)
-                    break;
-                }
-                case "replyme": {
-                    messagePage.replyToMePage.firstStart = false
-                    messagePage.replyToMePage.getlist(true)
-                    app.enterMessagePage(messagePage.replyToMePage)
-                    break;
-                }
-                case "atme": {
-                    messagePage.atMePage.firstStart = false
-                    messagePage.atMePage.getlist(true)
-                    app.enterMessagePage(messagePage.atMePage)
-                    break;
-                }
-                }
-            }
-        }
-        Button {
-            platformInverted: parent.platformInverted
-            iconSource: privateStyle.imagePath(pressed?"qtg_graf_popup_close_pressed":"qtg_graf_popup_close_normal",
-                                                        platformInverted)
-            anchors {
-                right: parent.right; rightMargin: platformStyle.paddingLarge
-                verticalCenter: parent.verticalCenter
-            }
-            onClicked: banner.close()
-        }
+        id: infoBanner;
+        property string infoType: "replyme";
+        iconSource: "gfx/tb_mini.svg";
+        interactive: true;
+        platformInverted: tbsettings.whiteTheme;
+        onClicked: internal.infoBannerClicked();
     }
 }

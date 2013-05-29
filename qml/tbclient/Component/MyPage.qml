@@ -2,13 +2,14 @@ import QtQuick 1.1
 import com.nokia.symbian 1.1
 
 Page {
-    id: root
+    id: root;
 
-    property string title
+    property string title;
+
     Binding {
-        target: app
-        property: "title"
-        value: root.title
-        when: root.status == PageStatus.Active && title != ""
+        target: app;
+        property: "title";
+        value: root.title;
+        when: root.status == PageStatus.Active && title.length > 0
     }
 }

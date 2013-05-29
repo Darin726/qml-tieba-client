@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html><head><title></title>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="search.css"/>
+<script type="text/javascript" src="search.js"></script>
+</head>
+<body class="SRPage">
+<div id="SRIndex">
+<div class="SRStatus" id="Loading">Loading...</div>
+<div class="SRResult" id="SR_products">
+ <div class="SREntry">
+  <a id="Item0" onkeydown="return searchResults.Nav(event,0)" onkeypress="return searchResults.Nav(event,0)" onkeyup="return searchResults.Nav(event,0)" class="SRSymbol" href="../class_q_iap_private.html#a0a60b301657cade844c67c186da25630" target="_parent">products</a>
+  <span class="SRScope">QIapPrivate</span>
+ </div>
+</div>
+<div class="SRResult" id="SR_productsrequested">
+ <div class="SREntry">
+  <a id="Item1" onkeydown="return searchResults.Nav(event,1)" onkeypress="return searchResults.Nav(event,1)" onkeyup="return searchResults.Nav(event,1)" class="SRSymbol" href="../class_q_iap_private.html#a9c6fa1c16e0e1f37ba43f595dd6ae81a" target="_parent">productsRequested</a>
+  <span class="SRScope">QIapPrivate</span>
+ </div>
+</div>
+<div class="SRResult" id="SR_purchaseproductbyid">
+ <div class="SREntry">
+  <a id="Item2" onkeydown="return searchResults.Nav(event,2)" onkeypress="return searchResults.Nav(event,2)" onkeyup="return searchResults.Nav(event,2)" class="SRSymbol" href="../class_q_iap.html#a6d5dfcf16e7aa58a3de1505075f88caf" target="_parent">purchaseProductByID</a>
+  <span class="SRScope">QIap</span>
+ </div>
+</div>
+<div class="SRResult" id="SR_purchaseproductbyname">
+ <div class="SREntry">
+  <a id="Item3" onkeydown="return searchResults.Nav(event,3)" onkeypress="return searchResults.Nav(event,3)" onkeyup="return searchResults.Nav(event,3)" class="SRSymbol" href="../class_q_iap.html#ada07f221851987bc10de4600150cb8fb" target="_parent">purchaseProductByName</a>
+  <span class="SRScope">QIap</span>
+ </div>
+</div>
+<div class="SRStatus" id="Searching">Searching...</div>
+<div class="SRStatus" id="NoMatches">No Matches</div>
+<script type="text/javascript"><!--
+document.getElementById("Loading").style.display="none";
+document.getElementById("NoMatches").style.display="none";
+var searchResults = new SearchResults("searchResults");
+searchResults.Search();
+--></script>
+</div>
+</body>
+</html>

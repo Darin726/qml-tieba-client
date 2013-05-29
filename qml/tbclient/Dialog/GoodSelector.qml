@@ -2,27 +2,18 @@ import QtQuick 1.1
 import com.nokia.symbian 1.1
 
 SelectionDialog {
-    id: root
-    titleText: "精品区"
-    buttonTexts: ["全部帖子"]
+    id: root;
+    titleText: qsTr("Boutique");
+    buttonTexts: [qsTr("All Posts")];
     delegate: MenuItem {
-        text: class_name
+        text: model.name;
         onClicked: {
-            isGood = true
-            internal.getList(class_id)
-            root.accept()
+            selectedIndex = index;
+            root.accept();
         }
     }
     onButtonClicked: {
-        isGood = false
-        pageNumber = 1
-        internal.getList()
-    }
-    property bool opened
-    onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
+        selectedIndex = -1;
+        root.accept();
     }
 }

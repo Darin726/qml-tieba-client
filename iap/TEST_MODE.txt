@@ -1,0 +1,4 @@
+[simulation]
+#default=simulated_ok
+[testserver]
+testMode=purchase

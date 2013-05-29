@@ -1,196 +1,222 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
-import "js/storage.js" as Database
 
-Page {
-    id: root
+MyPage {
+    id: imagePage
 
-    property string imgUrl
-    property real picscale: slider.value/100
+    property url imageUrl: ""
 
-    function calcscale(){
-        return pic.sourceSize.height/pic.sourceSize.width < root.height/root.width
-                ? root.width/pic.sourceSize.width
-                : root.height/pic.sourceSize.height
-    }
+    property QtObject menu: null;
+    property QtObject emoDialog: null;
 
-    onStatusChanged: {
-        if (status == PageStatus.Active)
-            pic.source = imgUrl
-    }
+    title: qsTr("Image Viewer");
 
     tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"; onClicked: pageStack.pop()
+        ToolButtonWithTip {
+            iconSource: "toolbar-back"
+            toolTipText: qsTr("Back")
+            onClicked: pageStack.pop()
         }
-        Slider {
-            id: slider
-            width: parent.width - 100
-            anchors.centerIn: parent
-            minimumValue: 1;
-            maximumValue: 200; stepSize: 2
-            valueIndicatorVisible: true
-            valueIndicatorText: slider.value  + "%"
-            visible: Image.Ready == pic.status
-            value: 100.0
-        }
-        ToolButton {
-            iconSource: "toolbar-menu"
-            onClicked: menu.open()
-        }
-    }
-    Menu {
-        id: menu
-        content: MenuLayout {
-            MenuItem {
-                text: "保存图片"
-                enabled: pic.status == Image.Ready
-                onClicked: {
-                    var res = utility.savePixmap(imgUrl, tbsettings.imagePath)
-                    if (res.length>0){
-                        app.showMessage("图片已保存至"+res)
-                    } else {
-                        app.showMessage("保存失败> <")
-                    }
-                }
-            }
-            MenuItem {
-                text: "添加到表情"
-                enabled: pic.status == Image.Ready
-                onClicked: {
-                    var id = imgUrl.match(/http:\/\/imgsrc.baidu.com\/forum\/pic\/item\/(.*)\.jpg/)
-                    if (id){
-                        diag.picId = id[1];
-                        diag.open()
-                    } else {
-                        app.showMessage("> <此图片不支持直接添加")
-                    }
-                }
+        ToolButtonWithTip {
+            iconSource: "toolbar-menu";
+            toolTipText: qsTr("Menu");
+            enabled: imagePreview.status === Image.Ready;
+            onClicked: {
+                if (!menu){ menu = menuComp.createObject(imagePage); }
+                menu.open();
             }
         }
     }
-    CommonDialog {
-        id: diag
-        property string picId
-        titleText: "添加一个自定义表情"
-        buttonTexts: ["保存","取消"]
-        content: Item {
-            width: parent.width; height: platformStyle.graphicSizeLarge
-            TextField {
-                id: nameField
-                anchors {
-                    left: parent.left; right: parent.right; margins: platformStyle.paddingLarge
-                    verticalCenter: parent.verticalCenter
-                }
-                placeholderText: "设定名称(可选)"
-            }
-        }
 
-        onButtonClicked: {
-            if (index == 0){
-                var list = Database.getCustomEmo()
-                var name = nameField.text || "MyEmo"
-                function check(name){
-                    for (var i in list){
-                        if (list[i].name == name)
-                            return true;
+    Component {
+        id: menuComp;
+        Menu {
+            MenuLayout {
+                MenuItem {
+                    text: qsTr("Save image");
+                    onClicked: {
+                        var path = tbsettings.savePath + "/" + imageUrl.toString().split("/").pop();
+                        if (utility.saveCache(imageUrl, path)){
+                            signalCenter.showMessage(qsTr("Image saved to ")+path);
+                        } else {
+                            downloader.appendDownload(imageUrl, path);
+                        }
                     }
-                    return false;
                 }
-                if (check(name)){
-                    var i = 1;
-                    while (check(name+"-"+i))
-                        i ++;
-                    name += "-"+i;
-                }
-                var img = utility.saveThumbnail(imgUrl, Qt.size(46, 46))
-                if (img.length>0){
-                    Database.addCustomEmo(name, img, "pic,"+diag.picId+","+pic.sourceSize.width+","+pic.sourceSize.height)
-                    app.showMessage("表情添加成功")
-                } else {
-                    app.showMessage("> <添加失败，请在表情管理页手动添加。")
+                MenuItem {
+                    text: qsTr("Add to custom emoticon");
+                    enabled: /imgsrc.baidu.com\/forum\/pic\/item\/.*\.jpg/.test(imageUrl);
+                    onClicked: {
+                        if (!emoDialog){
+                            var prop = { imgurl: imageUrl, picsize: Qt.size(imagePreview.paintedWidth, imagePreview.paintedHeight) };
+                            emoDialog = Qt.createComponent("Dialog/AddEmoticonDialog.qml").createObject(imagePage, prop);
+                        }
+                        emoDialog.open();
+                    }
                 }
             }
-            diag.picId = ""
-            nameField.text = ""
         }
     }
 
     Flickable {
-        id: flic
+        id: imageFlickable
         anchors.fill: parent
+        contentWidth: imageContainer.width; contentHeight: imageContainer.height
+        clip: true
+        onHeightChanged: if (imagePreview.status === Image.Ready) imagePreview.fitToScreen()
 
-        property int oldContentWidth
-        property int oldContentHeight
+        Item {
+            id: imageContainer
+            width: Math.max(imagePreview.width * imagePreview.scale, imageFlickable.width)
+            height: Math.max(imagePreview.height * imagePreview.scale, imageFlickable.height)
 
-        contentWidth: Math.max(width, pic.width * pic.scale)+1
-        contentHeight: Math.max(height, pic.height * pic.scale)+1
+            Image {
+                id: imagePreview
 
-        onContentWidthChanged: {
-            if(( flic.oldContentWidth != 0) && ( flic.width != 0) ){
-                flic.contentX += (flic.contentWidth - flic.oldContentWidth)/2;
-            }
-            flic.oldContentWidth = flic.contentWidth;
-        }
-        onContentHeightChanged: {
-            if((flic.oldContentHeight != 0) && ( flic.height != 0)) {
-                flic.contentY += (flic.contentHeight - flic.oldContentHeight)/2;
-            }
-            flic.oldContentHeight = flic.contentHeight;
-        }
-        Image{
-            id: pic
-            anchors.centerIn: parent
-            scale: root.picscale
-            smooth: true
-            onStatusChanged: {
-                if(Image.Ready == pic.status){
-                    slider.value = Math.floor(root.calcscale() * 100);
-                    flic.contentX = 0; flic.contentY = 0;
+                property real prevScale
+
+                function fitToScreen() {
+                    scale = Math.min(imageFlickable.width / width, imageFlickable.height / height, 1)
+                    pinchArea.minScale = scale
+                    prevScale = scale
                 }
-            }
-            Column {
+
                 anchors.centerIn: parent
-                spacing: platformStyle.paddingLarge
-                visible: pic.status == Image.Loading
-                BusyIndicator {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    running: true
-                    width: platformStyle.graphicSizeLarge
-                    height: platformStyle.graphicSizeLarge
-                    platformInverted: tbsettings.whiteTheme
+                fillMode: Image.PreserveAspectFit
+                cache: false
+                asynchronous: true
+                source: imageUrl
+                sourceSize.height: 1000;
+                smooth: !imageFlickable.moving
+
+                onStatusChanged: {
+                    if (status == Image.Ready) {
+                        fitToScreen()
+                        loadedAnimation.start()
+                    }
                 }
-                Label {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: Math.floor(pic.progress * 100) + "%"
-                    color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
-                                                 : platformStyle.colorDisabledMid
-                    font.pixelSize: platformStyle.fontSizeLarge
+
+                NumberAnimation {
+                    id: loadedAnimation
+                    target: imagePreview
+                    property: "opacity"
+                    duration: 250
+                    from: 0; to: 1
+                    easing.type: Easing.InOutQuad
+                }
+
+                onScaleChanged: {
+                    if ((width * scale) > imageFlickable.width) {
+                        var xoff = (imageFlickable.width / 2 + imageFlickable.contentX) * scale / prevScale;
+                        imageFlickable.contentX = xoff - imageFlickable.width / 2
+                    }
+                    if ((height * scale) > imageFlickable.height) {
+                        var yoff = (imageFlickable.height / 2 + imageFlickable.contentY) * scale / prevScale;
+                        imageFlickable.contentY = yoff - imageFlickable.height / 2
+                    }
+                    prevScale = scale
                 }
             }
         }
+
         PinchArea {
-            property real oldScale
+            id: pinchArea
+
+            property real minScale: 1.0
+            property real maxScale: 3.0
+
             anchors.fill: parent
-            onPinchStarted: oldScale = slider.value
-            onPinchUpdated: {
-                slider.value = oldScale * pinch.scale
+            enabled: imagePreview.status === Image.Ready
+            pinch.target: imagePreview
+            pinch.minimumScale: minScale * 0.5 // This is to create "bounce back effect"
+            pinch.maximumScale: maxScale * 1.5 // when over zoomed
+
+            onPinchFinished: {
+                imageFlickable.returnToBounds()
+                if (imagePreview.scale < pinchArea.minScale) {
+                    bounceBackAnimation.to = pinchArea.minScale
+                    bounceBackAnimation.start()
+                }
+                else if (imagePreview.scale > pinchArea.maxScale) {
+                    bounceBackAnimation.to = pinchArea.maxScale
+                    bounceBackAnimation.start()
+                }
+            }
+
+            NumberAnimation {
+                id: bounceBackAnimation
+                target: imagePreview
+                duration: 250
+                property: "scale"
+                from: imagePreview.scale
             }
         }
-        MouseArea{
-            anchors.fill: parent
-            onPressAndHold: {
-                app.showToolBar = !app.showToolBar
-                app.showStatusBar = !app.showStatusBar
-            }
+        MouseArea {
+            id: mouseArea;
+            anchors.fill: parent;
+            enabled: imagePreview.status === Image.Ready;
             onDoubleClicked: {
-                if (slider.value < 90){
-                    slider.value = 100
+                if (imagePreview.scale > pinchArea.minScale){
+                    bounceBackAnimation.to = pinchArea.minScale
+                    bounceBackAnimation.start()
                 } else {
-                    slider.value = Math.floor(root.calcscale() * 100);
+                    bounceBackAnimation.to = pinchArea.maxScale
+                    bounceBackAnimation.start()
                 }
             }
         }
     }
+
+    Loader {
+        anchors.centerIn: parent
+        sourceComponent: {
+            switch (imagePreview.status) {
+            case Image.Loading:
+                return loadingIndicator
+            case Image.Error:
+                return failedLoading
+            default:
+                return undefined
+            }
+        }
+
+        Component {
+            id: loadingIndicator
+
+            Item {
+                height: childrenRect.height
+                width: imagePage.width
+
+                BusyIndicator {
+                    id: imageLoadingIndicator
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    height: platformStyle.graphicSizeLarge; width: platformStyle.graphicSizeLarge
+                    running: true
+                    platformInverted: tbsettings.whiteTheme;
+                }
+
+                Label {
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: imageLoadingIndicator.bottom; topMargin: platformStyle.paddingLarge
+                    }
+                    font.pixelSize: platformStyle.fontSizeLarge
+                    text: qsTr("Loading image...%1").arg(Math.round(imagePreview.progress*100) + "%")
+                    platformInverted: tbsettings.whiteTheme;
+                }
+            }
+        }
+
+        Component {
+            id: failedLoading
+            Label {
+                font.pixelSize: platformStyle.fontSizeLarge
+                text: qsTr("Error loading image")
+                platformInverted: tbsettings.whiteTheme;
+            }
+        }
+    }
+
+    ScrollDecorator { platformInverted: tbsettings.whiteTheme; flickableItem: imageFlickable }
 }

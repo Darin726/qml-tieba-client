@@ -1,97 +1,95 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 import "Component"
-import "js/storage.js" as Database
+import "../js/storage.js" as Database
 
 MyPage {
-    id: bookMarkPage
-    title: "我的书签"
+    id: page;
+
+    title: qsTr("Bookmark Manage");
 
     tools: ToolBarLayout {
-        ToolButton {
-            iconSource: "toolbar-back"
-            onClicked: pageStack.pop()
+        ToolButtonWithTip {
+            toolTipText: qsTr("Back");
+            iconSource: "toolbar-back";
+            onClicked: pageStack.pop();
         }
-        ToolButton {
-            text: "清空"
-            onClicked: diag.open()
+        ToolButtonWithTip {
+            toolTipText: qsTr("Clear");
+            iconSource: "toolbar-delete";
+            onClicked: {
+                dialog.createQueryDialog(qsTr("Clear Bookmark"),
+                                         qsTr("Do you want to clear all these bookmarks?"),
+                                         qsTr("Yes"),
+                                         qsTr("No"),
+                                         clear);
+            }
         }
     }
 
     onStatusChanged: {
-        if (status == PageStatus.Active)
-            Database.getBookMark(bookmarkModel)
-    }
-
-    Label {
-        anchors.centerIn: parent
-        text: "没有保存的书签"
-        visible: view.count == 0
-        font.pixelSize: platformStyle.graphicSizeSmall
-        color: tbsettings.whiteTheme ? platformStyle.colorDisabledMidInverted
-                                     : platformStyle.colorDisabledMid
-    }
-
-    QueryDialog {
-        id: diag
-        titleText: "清空书签"
-        height: platformStyle.graphicSizeMedium
-        message: "确定要删除所有保存的书签吗？"
-        acceptButtonText: "确定"
-        rejectButtonText: "取消"
-        onAccepted: {
-            Database.deleteBookMark()
-            bookmarkModel.clear()
+        if (status == PageStatus.Active){
+            Database.getBookMark(listModel);
         }
+    }
+
+    function clear(){
+        Database.deleteBookMark();
+        listModel.clear();
     }
 
     ViewHeader {
-        id: viewHeader
-        headerText: "我的书签"
+        id: viewHeader;
+        headerText: page.title;
+        headerIcon: "gfx/bookmark.svg";
+        enabled: false;
     }
+
     ListView {
-        id: view
-        anchors {
-            fill: parent; topMargin: viewHeader.height
-        }
-        clip: true
-        model: ListModel { id: bookmarkModel }
-        delegate: ListItem {
-            id: root
-            platformInverted: tbsettings.whiteTheme
-            implicitHeight: contentCol.height + platformStyle.paddingLarge*2
-            onClicked: app.enterThread(threadId, title, postId, 1, isLz)
-            Column {
-                id: contentCol
-                anchors {
-                    top: parent.paddingItem.top; left: parent.paddingItem.left; right: btn.left
+        id: view;
+        anchors { fill: parent; topMargin: viewHeader.height; }
+        model: ListModel { id: listModel; }
+        delegate: delegateComp;
+        Component {
+            id: delegateComp;
+            ListItem {
+                id: root;
+                platformInverted: tbsettings.whiteTheme;
+                implicitHeight: contentCol.height + platformStyle.paddingLarge*2;
+
+                onClicked: {
+                    var opt = { threadId: model.threadId, title: model.title, isLz: model.isLz, pid: model.postId }
+                    app.enterThread(opt);
                 }
-                Label {
-                    width: parent.width
-                    text: model.title
-                    wrapMode: Text.Wrap
-                    platformInverted: root.platformInverted
+
+                Column {
+                    id: contentCol;
+                    anchors { left: root.paddingItem.left; top: root.paddingItem.top; right: delBtn.left; }
+                    Label {
+                        width: parent.width;
+                        text: model.title;
+                        wrapMode: Text.Wrap;
+                        platformInverted: root.platformInverted;
+                    }
+                    ListItemText {
+                        platformInverted: root.platformInverted;
+                        width: parent.width;
+                        text: model.author;
+                        role: "SubTitle";
+                    }
                 }
-                ListItemText {
-                    platformInverted: root.platformInverted
-                    width: parent.width
-                    text: model.author
-                    role: "SubTitle"
-                }
-            }
-            Button {
-                id: btn
-                platformInverted: root.platformInverted
-                anchors {
-                    right: parent.paddingItem.right; verticalCenter: parent.verticalCenter
-                }
-                iconSource: privateStyle.toolBarIconPath("toolbar-delete", platformInverted)
-                onClicked:  {
-                    Database.deleteBookMark(model.threadId)
-                    bookmarkModel.remove(index)
+
+                Button {
+                    id: delBtn;
+                    platformInverted: root.platformInverted;
+                    anchors { right: root.paddingItem.right; verticalCenter: parent.verticalCenter; }
+                    iconSource: privateStyle.toolBarIconPath("toolbar-delete", platformInverted);
+                    onClicked: {
+                        Database.deleteBookMark(model.threadId);
+                        listModel.remove(index);
+                    }
                 }
             }
         }
     }
 }
-

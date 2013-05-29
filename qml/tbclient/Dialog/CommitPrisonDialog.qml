@@ -1,68 +1,86 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
-import "../js/main.js" as Script
+import "../../js/main.js" as Script
 
 CommonDialog {
-    id: root
+    id: root;
 
-    property string userName
-    property Item caller
+    property string manager: "1";
+    property variant param: null;
 
-    titleText: "封禁操作"
-    buttonTexts: ["封ID","取消"]
-
-    content: Column {
-        id: column
-        anchors {
-            left: parent.left; right: parent.right;
-            margins: platformStyle.paddingLarge
-        }
-        spacing: platformStyle.paddingMedium
-        Item { width: 1; height: 1 }
-        Label {
-            text: "用户名："+userName
-        }
-        Label {
-            text: "封禁时长："
-        }
-        ButtonColumn {
-            id: buttonColumn
-            anchors.horizontalCenter: parent.horizontalCenter
-            Button {
-                id: day1
-                width: Math.floor(column.width / 2)
-                text: "1天"
-            }
-            Button {
-                id: day3
-                visible: manageGroup == 1
-                width: Math.floor(column.width / 2)
-                text: "3天"
-            }
-            Button {
-                visible: manageGroup == 1
-                width: Math.floor(column.width / 2)
-                text: "10天"
-            }
+    property bool __isClosing: false;
+    onStatusChanged: {
+        if (status == DialogStatus.Closing){
+            __isClosing = true;
+        } else if (status == DialogStatus.Closed && __isClosing){
+            root.destroy();
         }
     }
+    Component.onCompleted: open();
+
+    titleText: qsTr("Confirm operation");
+    buttonTexts: [qsTr("Ban ID"), qsTr("Cancel")];
 
     onButtonClicked: {
-        if (index == 0){
-            var days = buttonColumn.checkedButton == day1
-                    ? 1
-                    : buttonColumn.checkedButton == day3
-                      ? 3
-                      : 10
-            Script.commitprison(caller, userName, days)
+        if (index == 0) accept();
+    }
+    onAccepted: {
+        var opt = {
+            day: buttonCol.checkedButton.objectName.substring(3),
+            fid: param.fid,
+            ntn: "banid",
+            un: param.un,
+            word: param.word,
+            z: param.z
         }
+        Script.commitPrison(opt);
     }
 
-    property bool opened
-    onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
+    content: Item {
+        width: platformContentMaximumWidth;
+        height: Math.min(platformContentMaximumHeight, contentCol.height);
+
+        Flickable {
+            anchors.fill: parent;
+            clip: true;
+            contentWidth: parent.width;
+            contentHeight: contentCol.height;
+            Column {
+                id: contentCol;
+                width: parent.width;
+                spacing: platformStyle.paddingMedium;
+                Item { width: 1; height: 1; }
+                Label {
+                    anchors { left: parent.left; leftMargin: platformStyle.paddingLarge; }
+                    text: param ? qsTr("User name:")+param.un : "";
+                }
+                Label {
+                    anchors { left: parent.left; leftMargin: platformStyle.paddingLarge; }
+                    text: qsTr("Ban period:");
+                }
+                ButtonColumn {
+                    id: buttonCol;
+                    anchors { left: parent.left; right: parent.right; margins: Math.floor(parent.width/4); }
+                    spacing: platformStyle.paddingMedium;
+                    Button {
+                        objectName: "ban1";
+                        width: parent.width;
+                        text: qsTr("1 Days");
+                    }
+                    Button {
+                        objectName: "ban3"
+                        visible: manager == "1";
+                        width: parent.width;
+                        text: qsTr("3 Days");
+                    }
+                    Button {
+                        objectName: "ban10";
+                        visible: manager == "1";
+                        width: parent.width;
+                        text: qsTr("10 Days");
+                    }
+                }
+            }
+        }
     }
 }

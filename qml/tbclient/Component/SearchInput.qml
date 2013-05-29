@@ -2,68 +2,56 @@ import QtQuick 1.1
 import com.nokia.symbian 1.1
 
 TextField {
-    id: searchField
+    id: root;
 
-    platformRightMargin: clearButton.width + platformStyle.paddingSmall
-
-    signal typeStopped
-    signal cleared
+    signal typeStopped;
+    signal cleared;
 
     onTextChanged: {
-        inputTimer.restart()
-        if(text!="")
-            clearButton.state = "ClearVisible"
+        inputTimer.restart();
     }
+
+    platformLeftMargin: searchIcon.width + platformStyle.paddingMedium;
+    platformRightMargin: clearButton.width + platformStyle.paddingMedium;
 
     Timer {
-        id: inputTimer
-        interval: 350
-        onTriggered: typeStopped()
+        id: inputTimer;
+        interval: 500;
+        onTriggered: root.typeStopped();
     }
-    Image {
-        id: clearButton; objectName: "clearButton"
-        height: platformStyle.graphicSizeSmall
-        width: platformStyle.graphicSizeSmall
-        anchors.right: parent.right
-        anchors.rightMargin: platformStyle.paddingSmall
-        anchors.verticalCenter: parent.verticalCenter
-        state: "ClearHidden"
-        source: privateStyle.imagePath(
-                    clearMouseArea.pressed ? "qtg_graf_textfield_clear_pressed"
-                                           : "qtg_graf_textfield_clear_normal", searchField.platformInverted)
 
+    Image {
+        id: searchIcon;
+        anchors { left: parent.left; leftMargin: platformStyle.paddingMedium; verticalCenter: parent.verticalCenter; }
+        height: platformStyle.graphicSizeSmall;
+        width: platformStyle.graphicSizeSmall;
+        sourceSize: Qt.size(platformStyle.graphicSizeSmall, platformStyle.graphicSizeSmall);
+        source: privateStyle.toolBarIconPath("toolbar-search", true);
+    }
+
+    Item {
+        id: clearButton;
+        anchors { right: parent.right; rightMargin: platformStyle.paddingMedium; verticalCenter: parent.verticalCenter; }
+        height: platformStyle.graphicSizeSmall;
+        width: platformStyle.graphicSizeSmall;
+        opacity: root.activeFocus ? 1 : 0;
+        Behavior on opacity {
+            NumberAnimation { duration: 100; }
+        }
+        Image {
+            anchors.fill: parent;
+            sourceSize: Qt.size(platformStyle.graphicSizeSmall, platformStyle.graphicSizeSmall);
+            source: privateStyle.imagePath(clearMouseArea.pressed?"qtg_graf_textfield_clear_pressed":"qtg_graf_textfield_clear_normal", root.platformInverted);
+        }
         MouseArea {
-            id: clearMouseArea
-            anchors.fill: parent
+            id: clearMouseArea;
+            anchors.fill: parent;
             onClicked: {
-                searchField.closeSoftwareInputPanel()
-                searchField.text = ""
-                clearButton.state = "ClearHidden"
-                cleared()
+                root.closeSoftwareInputPanel();
+                root.text = "";
+                root.cleared();
+                root.parent.forceActiveFocus();
             }
         }
-
-        states: [
-            State {
-                name: "ClearVisible"
-                PropertyChanges {target: clearButton; opacity: 1}
-            },
-            State {
-                name: "ClearHidden"
-                PropertyChanges {target: clearButton; opacity: 0}
-            }
-        ]
-
-        transitions: [
-            Transition {
-                from: "ClearVisible"; to: "ClearHidden"
-                NumberAnimation { properties: "opacity"; duration: 100; easing.type: Easing.Linear }
-            },
-            Transition {
-                from: "ClearHidden"; to: "ClearVisible"
-                NumberAnimation { properties: "opacity"; duration: 100; easing.type: Easing.Linear }
-            }
-        ]
-
     }
 }

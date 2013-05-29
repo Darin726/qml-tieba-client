@@ -1,33 +1,42 @@
 import QtQuick 1.1
 import com.nokia.symbian 1.1
 
+
 CommonDialog {
-    id: root
+    id: root;
 
-    titleText: "设定签名"
-    buttonTexts: ["确定","清空","取消"]
+    titleText: qsTr("Set Sign");
+    buttonTexts: [qsTr("Save"), qsTr("Clear"), qsTr("Cancel")];
 
-    height: 300
-
-    content: TextArea {
-        id: textArea
-        anchors {
-            fill: parent; margins: platformStyle.paddingMedium
+    content: Item {
+        width: platformContentMaximumWidth;
+        height: Math.min(platformContentMaximumHeight, 180);
+        TextArea {
+            id: textArea;
+            anchors { fill: parent; margins: platformStyle.paddingMedium; }
+            text: tbsettings.signText;
         }
-        text: tbsettings.signText
     }
+
     onButtonClicked: {
-        switch (index){
-        case 0: tbsettings.signText = textArea.text; break;
-        case 1: tbsettings.signText = ""; break;
+        if (index == 0){
+            tbsettings.signText = textArea.text;
+            root.accept();
+        } else if (index == 1){
+            tbsettings.signText = "";
+            root.accept();
+        } else {
+            root.reject();
         }
     }
 
-    property bool opened
+    property bool __isClosing: false;
     onStatusChanged: {
-        if (status == DialogStatus.Opening)
-            opened = true
-        else if (status == DialogStatus.Closed && opened)
-            root.destroy()
+        if (status == DialogStatus.Closing){
+            __isClosing = true;
+        } else if (status == DialogStatus.Closed && __isClosing){
+            root.destroy();
+        }
     }
+    Component.onCompleted: open();
 }
